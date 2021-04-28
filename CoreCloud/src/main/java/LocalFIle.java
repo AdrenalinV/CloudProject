@@ -8,11 +8,11 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 @Getter
-public class FIleClient {
+public class LocalFIle {
     FileOutputStream fs=null;
     String outPath;
 
-    public FIleClient(String outPath) throws FileNotFoundException {
+    public LocalFIle(String outPath) throws FileNotFoundException {
         if (outPath!=null){
             this.outPath = outPath;
             this.fs=new FileOutputStream(this.outPath);

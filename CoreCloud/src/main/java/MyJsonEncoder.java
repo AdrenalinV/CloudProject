@@ -13,6 +13,8 @@ public class MyJsonEncoder extends MessageToMessageEncoder<DataSet> {
     protected void encode(ChannelHandlerContext channelHandlerContext, DataSet ds, List<Object> list) throws Exception {
         mapper.writeValue(writer,ds);
         list.add(writer.toString());
+        writer.getBuffer().setLength(0);
+        System.out.println("[DEBUG]: Encoding");
 
     }
 
