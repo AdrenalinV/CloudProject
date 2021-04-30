@@ -37,9 +37,10 @@ public class ServerCloud {
                                     new LengthFieldPrepender(4),
                                     new StringDecoder(Charset.forName("UTF-8")),
                                     new StringEncoder(Charset.forName("UTF-8")),
-                                    new MyJsonEncoder(),
-                                    new MyJsonDecoder(),
-                                    new ServerHandler()
+                                    new AuthServerHendler()
+//                                    new MyJsonEncoder(),
+//                                    new MyJsonDecoder(),
+//                                    new ServerHandler()
 //                                    new TestServerHandler()
                             );
                         }

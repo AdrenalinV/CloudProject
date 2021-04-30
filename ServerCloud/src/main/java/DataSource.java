@@ -19,4 +19,5 @@ public class DataSource {
     public static Connection getConnection()throws SQLException {
         return DriverManager.getConnection(DB_URL);
     }
+
 }
