@@ -18,6 +18,7 @@ import java.nio.charset.Charset;
 public class ServerCloud {
     private int port;
 
+
     public ServerCloud(int port) {
         this.port = port;
     }
@@ -37,10 +38,10 @@ public class ServerCloud {
                                     new LengthFieldPrepender(4),
                                     new StringDecoder(Charset.forName("UTF-8")),
                                     new StringEncoder(Charset.forName("UTF-8")),
-                                    new AuthServerHendler()
-//                                    new MyJsonEncoder(),
-//                                    new MyJsonDecoder(),
-//                                    new ServerHandler()
+//                                    new AuthServerHendler()
+                                    new MyJsonEncoder(),
+                                    new MyJsonDecoder(),
+                                    new ServerHandler()
 //                                    new TestServerHandler()
                             );
                         }

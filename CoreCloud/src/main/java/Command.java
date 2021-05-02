@@ -1,12 +1,18 @@
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import lombok.Getter;
 import lombok.Setter;
+
 @JsonAutoDetect
 @Getter
 @Setter
-public class Command extends Message{
+public class Command extends Message {
     private String commandName;
-    public Command(String commandName) {
-        this.commandName=commandName;
+    private String value;
+
+    public  Command(){};
+
+    public Command(String commandName, String value) {
+        this.commandName = commandName;
+        this.value = value;
     }
 }

@@ -1,7 +1,7 @@
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 
-public class ClientAuthHandler extends SimpleChannelInboundHandler<String> {
+public class ClientAuthHandler extends SimpleChannelInboundHandler<Message> {
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
         ctx.writeAndFlush("USER:Vadim");
@@ -10,10 +10,9 @@ public class ClientAuthHandler extends SimpleChannelInboundHandler<String> {
 
 
     @Override
-    protected void channelRead0(ChannelHandlerContext ctx, String s) throws Exception {
-        if (s.equals("YES")){
-            ctx.channel().pipeline().remove(this);
-        }
+    protected void channelRead0(ChannelHandlerContext ctx, Message msg) throws Exception {
+
+
 
     }
 }

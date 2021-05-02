@@ -3,15 +3,26 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.sql.*;
 
-public class BaseAuthService implements AuthService{
-    private static final String INIT_DB = "CREATE TABLE IF NOT EXISTS users (id INTEGER  PRIMARY KEY AUTO_INCREMENT NOT NULL, login VARCHAR(40) UNIQUE NOT NULL, pass TEXT NOT NULL)";
-    private static final String EXIST_USER = "SELECT * FROM users WHERE login=?";
-    private static final String ADD_USER = "INSERT INTO users(login, pass) VALUES (?, ?)";
-    private static final String GET_AUTH_BY_LOGIN_PASS = "SELECT id FROM users WHERE login=? AND pass=?";
+public class BaseAuthService implements AuthService {
+    private static BaseAuthService bas = null;
+    private static final String INIT_DB = "CREATE SCHEMA IF NOT EXISTS CLOUD;" +
+            "CREATE TABLE IF NOT EXISTS CLOUD.user (id INTEGER PRIMARY KEY AUTO_INCREMENT NOT NULL," +
+            "login VARCHAR(40) UNIQUE NOT NULL," +
+            "pass VARCHAR(255) NOT NULL);" +
+            "CREATE TABLE IF NOT EXISTS CLOUD.data ( id INTEGER PRIMARY KEY AUTO_INCREMENT NOT NULL," +
+            "id_user INTEGER NOT NULL," +
+            "full_name VARCHAR(255) NOT NULL," +
+            "name VARCHAR(255) NOT NULL," +
+            "date_last_mod LONG NOT NULL," +
+            "date_del LONG," +
+            "FOREIGN KEY (id_user) REFERENCES CLOUD.user(id));" +
+            "COMMIT;";
+    private static final String EXIST_USER = "SELECT * FROM CLOUD.user WHERE login=?";
+    private static final String ADD_USER = "INSERT INTO CLOUD.user(login, pass) VALUES (?, ?)";
+    private static final String GET_AUTH_BY_LOGIN_PASS = "SELECT id FROM CLOUD.user WHERE login=? AND pass=?";
     private static final String SUPER_SECRET_SALT = "MY_MOM_MAKES_COFFEE";
 
-    @Override
-    public void start() throws SQLException {
+    private BaseAuthService() throws SQLException {
         try (Connection con = DataSource.getConnection();
              Statement st = con.createStatement()) {
             st.executeUpdate(INIT_DB);
@@ -19,20 +30,34 @@ public class BaseAuthService implements AuthService{
 
     }
 
+    public static BaseAuthService of() {
+        if (bas == null) {
+            try {
+                bas = new BaseAuthService();
+            } catch (SQLException throwables) {
+                throwables.printStackTrace();
+            }
+        }
+        return bas;
+    }
+
+
     @Override
-    public boolean getAuthByLoginPass(String login, String pass) {
-        boolean auth=false;
+    public String getAuthByLoginPass(String login, String pass) {
+        String res=null;
         try (Connection connection = DataSource.getConnection();
              PreparedStatement ps = connection.prepareStatement(GET_AUTH_BY_LOGIN_PASS)) {
             ps.setString(1, login);
             ps.setString(2, getPassword(pass));
             ResultSet rs = ps.executeQuery();
-            auth = rs.next();
+            while( rs.next()){
+                res=rs.getString(1);
+            }
             rs.close();
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        return auth;
+        return res;
     }
 
     @Override
@@ -63,10 +88,6 @@ public class BaseAuthService implements AuthService{
         return isExist;
     }
 
-    @Override
-    public void stop() {
-
-    }
     private String getPassword(String plainPassword) {
         String hashedPassword = null;
         String passwordWithSalt = plainPassword + SUPER_SECRET_SALT;

@@ -8,12 +8,7 @@ public class AuthServerHendler extends SimpleChannelInboundHandler<String> {
     private String pass;
     private BaseAuthService bas=null;
     AuthServerHendler(){
-        this.bas=new BaseAuthService();
-        try {
-           this. bas.start();
-        } catch (SQLException throwables) {
-            throwables.printStackTrace();
-        }
+        this.bas=BaseAuthService.of();
     }
 
 
@@ -27,7 +22,7 @@ public class AuthServerHendler extends SimpleChannelInboundHandler<String> {
             System.out.println("PASS: "+this.pass);
         }
         if(this.user!=null && this.pass!=null){
-            if (this.bas.getAuthByLoginPass(this.user,this.pass)){
+            if (this.bas.getAuthByLoginPass(this.user,this.pass)!=null){
                 ctx.writeAndFlush("YES");
                 System.out.println("AUTH: YES");
                 System.out.println(ctx.channel().pipeline());

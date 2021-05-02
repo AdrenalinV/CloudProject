@@ -12,6 +12,6 @@ public class MyJsonDecoder extends MessageToMessageDecoder<String> {
 
     @Override
     protected void decode(ChannelHandlerContext ctx, String s, List<Object> list) throws Exception {
-        list.add(mapper.readValue(s,DataSet.class));
+        list.add(mapper.readValue(s,Message.class));
     }
 }
