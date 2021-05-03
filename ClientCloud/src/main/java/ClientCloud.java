@@ -42,7 +42,6 @@ public class ClientCloud {
                             new LengthFieldPrepender(4),
                             new StringEncoder(Charset.forName("UTF-8")),
                             new StringDecoder(Charset.forName("UTF-8")),
-//                            new ClientAuthHandler()
                             new MyJsonEncoder(),
                             new MyJsonDecoder(),
                             new ClientHandler()

@@ -1,20 +1,17 @@
 
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
-
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.util.ArrayList;
+
+
 
 
 public class ClientHandler extends SimpleChannelInboundHandler<Message> {
 
-    private LocalFIle out=null;
+    private LocalFIle lf;
     private byte[] buf = new byte[1024 * 1024];
-    private DataSet tmp = null;
+    private DataSet tmp;
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, Message msg) throws Exception {
         if(msg instanceof AuthentcationRequest){

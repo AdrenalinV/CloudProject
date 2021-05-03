@@ -3,14 +3,13 @@
 import io.netty.channel.*;
 
 import java.io.*;
-import java.util.LinkedList;
-import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 
 public class ServerHandler extends SimpleChannelInboundHandler<Message> {
 
     private Thread handlerQueue;
-    private Queue<ItemTask> qTask = new LinkedList<>();
+    private ConcurrentLinkedQueue<ItemTask> qTask = new ConcurrentLinkedQueue<>();
     private static final String OUT_DIR = "C:\\Cloud\\";
     private Condition cond = Condition.notAuth;
     private String userID = null;
@@ -35,7 +34,7 @@ public class ServerHandler extends SimpleChannelInboundHandler<Message> {
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
         ch = ctx.channel();
         // Обработчик задач на отправку
-        this.handlerQueue = new Thread(new Runnable (){
+        this.handlerQueue = new Thread(new Runnable() {
             @Override
             public void run() {
                 byte[] buf = new byte[1024 * 1024];
@@ -152,59 +151,69 @@ public class ServerHandler extends SimpleChannelInboundHandler<Message> {
         // пришла команда
         if (msg instanceof Command) {
             Command cMsg = (Command) msg;
-            System.out.println("[DEBUG] Пришла команда: " + cMsg.getCommandName()+ " Значение : "+ cMsg.getValue());
+            System.out.println("[DEBUG] Пришла команда: " + cMsg.getCommandName() + " Значение : " + cMsg.getValue());
             switch (cMsg.getCommandName()) {
-                case "crUser":
+                case "crUser":  // создать пользователя
                     if (cond == Condition.notAuth) {
                         cond = Condition.newUser;
                     }
                     break;
-                case "upload":
+                case "upload": // отправить файл клиенту
                     if (cond == Condition.okAuth) {
                         if (cMsg.getValue() != null) {
                             String fileId = bds.getUserFile(userID, cMsg.getValue());
-                            System.out.println("[DEBUG] отправляем файл");
-                            File fin = new File(OUT_DIR + userID + "\\" + fileId);
-
-                            byte[] buf = new byte[1024 * 1024];
-                            DataSet tmp;
-                            int size;
-                            String fullName;
-                            String fileName;
-                            long lastMod;
-                            int allPart;
-                            int tPart;
-                            tPart = 0;
-                            allPart = (int) (fin.length() / (1024 * 1024)) + (fin.length() % (1024 * 1024) != 0 ? 1 : 0);
-                            fullName = bds.getFullName(fileId);
-                            fileName = bds.getFileName(fileId);
-                            lastMod = Long.parseLong(bds.getLastMod(fileId));
-                            System.out.println("[DEBUG] отправляем файл");
-                            try (FileInputStream inF = new FileInputStream(fin)) {
-                                while (inF.available() != 0) {
-                                    size = inF.read(buf);
-                                    tmp = new DataSet(fullName, fileName, lastMod, allPart, ++tPart, size, buf);
-                                    ChannelFuture f = ch.writeAndFlush(tmp);
-                                    f.addListener(new ChannelFutureListener() {
-                                        @Override
-                                        public void operationComplete(ChannelFuture future) throws Exception {
-                                            assert f == future;
-                                        }
-                                    });
-                                }
-                            }
-//                            qTask.add(new ItemTask(ch, fileId));
+//                            System.out.println("[DEBUG] отправляем файл");
+//                            File fin = new File(OUT_DIR + userID + "\\" + fileId);
+//
+//                            byte[] buf = new byte[1024 * 1024];
+//                            DataSet tmp;
+//                            int size;
+//                            String fullName;
+//                            String fileName;
+//                            long lastMod;
+//                            int allPart;
+//                            int tPart;
+//                            tPart = 0;
+//                            allPart = (int) (fin.length() / (1024 * 1024)) + (fin.length() % (1024 * 1024) != 0 ? 1 : 0);
+//                            fullName = bds.getFullName(fileId);
+//                            fileName = bds.getFileName(fileId);
+//                            lastMod = Long.parseLong(bds.getLastMod(fileId));
+//                            System.out.println("[DEBUG] отправляем файл");
+//                            try (FileInputStream inF = new FileInputStream(fin)) {
+//                                while (inF.available() != 0) {
+//                                    size = inF.read(buf);
+//                                    tmp = new DataSet(fullName, fileName, lastMod, allPart, ++tPart, size, buf);
+//                                    ChannelFuture f = ch.writeAndFlush(tmp);
+//                                    f.addListener(new ChannelFutureListener() {
+//                                        @Override
+//                                        public void operationComplete(ChannelFuture future) throws Exception {
+//                                            assert f == future;
+//                                        }
+//                                    });
+//                                }
+//                            }
+                            qTask.add(new ItemTask(ch, fileId));
                             Answer ans = new Answer(true, "Задача поставлена в очередь.");
                             ctx.writeAndFlush(ans);
                         }
                     }
                     break;
-                case "list":
+                case "list": // список файлов на клиенте
                     if (cond == Condition.okAuth) {
                         //TODO
                     }
                     break;
-                case "clear":
+                case "clear": // удалить удаленные файла пользователя
+                    if (cond == Condition.okAuth) {
+                        //TODO
+                    }
+                    break;
+                case "delete": // удалить файла пользователя
+                    if (cond == Condition.okAuth) {
+                        //TODO
+                    }
+                    break;
+                case "undelete": // востановить удаленный файла пользователя
                     if (cond == Condition.okAuth) {
                         //TODO
                     }
