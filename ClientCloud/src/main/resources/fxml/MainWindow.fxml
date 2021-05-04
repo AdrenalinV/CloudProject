@@ -4,7 +4,7 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-<TabPane fx:controller="MainControl" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0" side="LEFT" tabClosingPolicy="UNAVAILABLE" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1">
+<TabPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="383.0" prefWidth="600.0" side="LEFT" tabClosingPolicy="UNAVAILABLE" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="MainControl">
   <tabs>
     <Tab text="LogIN">
       <content>
@@ -15,47 +15,46 @@
                         <VBox maxWidth="300.0" minWidth="100.0" prefHeight="110.0" prefWidth="300.0">
                            <children>
                               <Label text="User" />
-                              <TextField alignment="TOP_LEFT" maxWidth="300.0" minWidth="100.0" prefHeight="20.0" prefWidth="200.0" VBox.vgrow="ALWAYS">
+                              <TextField fx:id="user" alignment="TOP_LEFT" maxWidth="300.0" minWidth="100.0" prefHeight="20.0" prefWidth="200.0" VBox.vgrow="ALWAYS">
                                  <VBox.margin>
                                     <Insets bottom="10.0" top="5.0" />
                                  </VBox.margin>
                               </TextField>
                               <Label text="Password" />
-                              <TextField maxWidth="300.0" minWidth="100.0" prefHeight="20.0" prefWidth="200.0">
+                              <TextField fx:id="pass" maxWidth="300.0" minWidth="100.0" prefHeight="20.0" prefWidth="200.0">
                                  <VBox.margin>
                                     <Insets bottom="10.0" top="5.0" />
                                  </VBox.margin>
                               </TextField>
-                           </children>
-                           <VBox.margin>
-                              <Insets bottom="10.0" top="10.0" />
-                           </VBox.margin>
-                        </VBox>
-                        <VBox maxWidth="300.0" minWidth="100.0" prefHeight="136.0" prefWidth="300.0">
-                           <children>
-                              <CheckBox mnemonicParsing="false" text="Setup connect" />
+                              <CheckBox fx:id="checkSetUp" mnemonicParsing="false" onAction="#setUP" prefHeight="17.0" prefWidth="111.0" text="Setup connect">
+                                 <VBox.margin>
+                                    <Insets left="5.0" right="5.0" top="10.0" />
+                                 </VBox.margin></CheckBox>
                               <Label disable="true" text="Server">
                                  <VBox.margin>
                                     <Insets bottom="5.0" left="5.0" top="10.0" />
                                  </VBox.margin>
                               </Label>
-                              <TextField disable="true" text="localhost" />
+                              <TextField fx:id="host" disable="true" text="localhost" />
                               <Label disable="true" text="Port">
                                  <VBox.margin>
                                     <Insets bottom="5.0" left="5.0" top="10.0" />
                                  </VBox.margin>
                               </Label>
-                              <TextField disable="true" text="8999" />
+                              <TextField fx:id="port" disable="true" text="8999"/>
                            </children>
+                           <VBox.margin>
+                              <Insets bottom="10.0" top="10.0" />
+                           </VBox.margin>
                         </VBox>
                         <HBox alignment="CENTER" prefHeight="42.0" prefWidth="572.0">
                            <children>
-                              <Button mnemonicParsing="false" prefHeight="25.0" prefWidth="50.0" text="Ok">
+                              <Button fx:id="oK" mnemonicParsing="false" onAction="#Auten" prefHeight="25.0" prefWidth="50.0" text="Ok">
                                  <HBox.margin>
                                     <Insets right="10.0" />
                                  </HBox.margin>
                               </Button>
-                              <Button mnemonicParsing="false" prefHeight="25.0" prefWidth="50.0" text="Exit">
+                              <Button fx:id="Exit" mnemonicParsing="false" onAction="#exit" prefHeight="25.0" prefWidth="50.0" text="Exit">
                                  <HBox.margin>
                                     <Insets left="10.0" />
                                  </HBox.margin>
