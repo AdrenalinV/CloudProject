@@ -1,3 +1,4 @@
+package ru.gb.server;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
@@ -12,11 +13,12 @@ import io.netty.handler.codec.string.StringDecoder;
 import io.netty.handler.codec.string.StringEncoder;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
-
-import java.nio.charset.Charset;
+import ru.gb.core.MyJsonDecoder;
+import ru.gb.core.MyJsonEncoder;
+import java.nio.charset.StandardCharsets;
 
 public class ServerCloud {
-    private int port;
+    private final int port;
 
 
     public ServerCloud(int port) {
@@ -31,17 +33,16 @@ public class ServerCloud {
                     .channel(NioServerSocketChannel.class)
                     .childHandler(new ChannelInitializer<SocketChannel>() {
                         @Override
-                        protected void initChannel(SocketChannel ch) throws Exception {
+                        protected void initChannel(SocketChannel ch) {
                             ch.pipeline().addLast(
                                     new LoggingHandler(LogLevel.DEBUG),
                                     new LengthFieldBasedFrameDecoder(2097152,0,4,0,4),
                                     new LengthFieldPrepender(4),
-                                    new StringDecoder(Charset.forName("UTF-8")),
-                                    new StringEncoder(Charset.forName("UTF-8")),
+                                    new StringDecoder(StandardCharsets.UTF_8),
+                                    new StringEncoder(StandardCharsets.UTF_8),
                                     new MyJsonEncoder(),
                                     new MyJsonDecoder(),
                                     new ServerHandler()
-//                                    new TestServerHandler()
                             );
                         }
                     })

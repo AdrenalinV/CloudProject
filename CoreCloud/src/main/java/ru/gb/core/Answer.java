@@ -1,3 +1,4 @@
+package ru.gb.core;
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import lombok.Getter;
 import lombok.Setter;

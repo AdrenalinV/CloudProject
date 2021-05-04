@@ -1,3 +1,6 @@
+package ru.gb.server;
+import ru.gb.core.DataSet;
+
 import java.sql.*;
 import java.util.ArrayList;
 

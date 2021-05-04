@@ -1,6 +1,7 @@
-
+package ru.gb.server;
 
 import io.netty.channel.*;
+import ru.gb.core.*;
 
 import java.io.*;
 import java.util.concurrent.ConcurrentLinkedQueue;

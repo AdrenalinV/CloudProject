@@ -1,3 +1,4 @@
+package ru.gb.core;
 import lombok.Getter;
 
 import javax.management.BadAttributeValueExpException;

@@ -1,6 +1,8 @@
-
+package ru.gb.client;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
+import ru.gb.core.*;
+
 import java.io.File;
 import java.io.FileOutputStream;
 

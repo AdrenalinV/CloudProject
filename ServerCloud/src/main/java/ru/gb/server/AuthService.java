@@ -1,4 +1,5 @@
-import java.sql.SQLException;
+package ru.gb.server;
+
 
 public interface AuthService {
 

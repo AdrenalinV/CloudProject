@@ -1,3 +1,4 @@
+package ru.gb.server;
 import io.netty.channel.Channel;
 import lombok.Getter;
 

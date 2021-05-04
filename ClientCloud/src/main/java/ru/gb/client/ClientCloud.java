@@ -1,3 +1,4 @@
+package ru.gb.client;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.ChannelFuture;
@@ -14,6 +15,9 @@ import io.netty.handler.codec.string.StringEncoder;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
 import lombok.Getter;
+import ru.gb.core.AuthentcationRequest;
+import ru.gb.core.MyJsonDecoder;
+import ru.gb.core.MyJsonEncoder;
 
 import java.nio.charset.StandardCharsets;
 
