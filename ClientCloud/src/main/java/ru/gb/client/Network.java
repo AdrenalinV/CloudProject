@@ -18,30 +18,26 @@ import lombok.Getter;
 import ru.gb.core.AuthentcationRequest;
 import ru.gb.core.MyJsonDecoder;
 import ru.gb.core.MyJsonEncoder;
-
 import java.nio.charset.StandardCharsets;
+import java.util.Collection;
 
 @Getter
-public class ClientCloud {
-    private static ClientCloud item;
+public class Network {
+    private static Network item;
     private SocketChannel socketChanel;
-    private final String server;
-    private final int port;
+    private static final String SERVER="localhost";
+    private static final int PORT=8999;
 
-    public static ClientCloud getInstance(String server, int port)  {
-        if (item == null) {
-            item = new ClientCloud(server, port);
+    public static Network getInstance(MainControl mControl)  {
+        if (item == null || !item.socketChanel.isActive()) {
+            item = new Network(mControl);
         }
         return item;
     }
 
 
-    private ClientCloud(String server, int port) {
-        this.server = server;
-        this.port = port;
-        System.out.println("[DEBUG] server: " + server + " port: " + port);
+    private Network(MainControl mControl) {
         new Thread(() -> {
-
             EventLoopGroup bossGroup = new NioEventLoopGroup();
             try {
                 System.out.println("[DEBUG] RUN Connect");
@@ -53,6 +49,7 @@ public class ClientCloud {
                             @Override
                             protected void initChannel(SocketChannel ch) {
                                 socketChanel = ch;
+                                System.out.println("[DEBUG] Exist connect");
                                 socketChanel.pipeline().addLast(
                                         new LoggingHandler(LogLevel.DEBUG),
                                         new LengthFieldBasedFrameDecoder(2097152, 0, 4, 0, 4),
@@ -61,11 +58,11 @@ public class ClientCloud {
                                         new StringDecoder(StandardCharsets.UTF_8),
                                         new MyJsonEncoder(),
                                         new MyJsonDecoder(),
-                                        new ClientHandler()
+                                        new ClientHandler(mControl)
                                 );
                             }
                         });
-                ChannelFuture f = b.connect(server, port).sync();
+                ChannelFuture f = b.connect(SERVER, PORT).sync();
                 f.channel().closeFuture().sync();
             } catch (Exception e) {
                 e.printStackTrace();
@@ -73,7 +70,11 @@ public class ClientCloud {
                 bossGroup.shutdownGracefully();
             }
         }).start();
-
+        try {
+            Thread.currentThread().sleep(1000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 
     public void autent(String user, String passw) {
@@ -83,4 +84,12 @@ public class ClientCloud {
         aMsg.setPass(passw);
         socketChanel.writeAndFlush(aMsg);
     }
+    public void close(){
+        socketChanel.close();
+    }
+    public static boolean isLive(){
+        return item!=null;
+    }
+
+
 }

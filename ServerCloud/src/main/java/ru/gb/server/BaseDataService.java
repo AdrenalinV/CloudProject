@@ -6,7 +6,7 @@ import java.util.ArrayList;
 
 public class BaseDataService implements DataService{
     private static BaseDataService bds=null;
-    private static final String USER_FILES="full_name FROM CLOUD.data WHERE id_user=?";
+    private static final String USER_FILES="SELECT full_name FROM CLOUD.data WHERE id_user=?";
     private static final String USER_FILE="SELECT id FROM CLOUD.data WHERE id_user=? AND full_name=?";
     private static final String ADD_FILE="INSERT INTO CLOUD.data(id_user, full_name ,name ,date_last_mod) VALUES (?, ?, ?, ?)";
     private static final String GET_DATE_MOD="SELECT date_last_mod FROM CLOUD.data WHERE id_user=? AND full_name=?";

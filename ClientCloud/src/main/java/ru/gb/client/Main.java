@@ -11,14 +11,18 @@ import java.io.InputStream;
 public class Main extends Application {
     public static void main(String[] args)  throws InterruptedException {
         Main.launch();
-       // new ClientCloud("localhost",8999).run();
     }
 
     @Override
     public void start(Stage stage) throws Exception {
         MainControl mainControl=(MainControl) init(stage, "fxml/MainWindow.fxml");
-//        oneControl.getFxBtnIn().setOnMouseClicked(event -> autentStage.show());
         stage.show();
+        stage.setOnCloseRequest(request->{
+           if (Network.isLive()){
+               Network b= Network.getInstance(mainControl);
+               b.close();
+           }
+        });
     }
     private Object init(Stage stage, String source) throws IOException {
         FXMLLoader fxmlloader = new FXMLLoader();
