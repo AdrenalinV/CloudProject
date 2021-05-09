@@ -1,121 +1,155 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import java.lang.*?>
 <?import javafx.geometry.*?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-<TabPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="383.0" prefWidth="600.0" side="LEFT" tabClosingPolicy="UNAVAILABLE" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ru.gb.client.MainControl">
-  <tabs>
-    <Tab text="LogIN">
-      <content>
-        <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
-               <children>
-                  <VBox alignment="CENTER" nodeOrientation="LEFT_TO_RIGHT" prefHeight="400.0" prefWidth="573.0">
-                     <children>
-                        <VBox maxWidth="300.0" minWidth="100.0" prefHeight="110.0" prefWidth="300.0">
-                           <children>
-                              <Label text="User" />
-                              <TextField fx:id="user" alignment="TOP_LEFT" maxWidth="300.0" minWidth="100.0" prefHeight="20.0" prefWidth="200.0" VBox.vgrow="ALWAYS">
-                                 <VBox.margin>
-                                    <Insets bottom="10.0" top="5.0" />
-                                 </VBox.margin>
-                              </TextField>
-                              <Label text="Password" />
-                              <TextField fx:id="pass" maxWidth="300.0" minWidth="100.0" prefHeight="20.0" prefWidth="200.0">
-                                 <VBox.margin>
-                                    <Insets bottom="10.0" top="5.0" />
-                                 </VBox.margin>
-                              </TextField>
-                              <CheckBox fx:id="checkSetUp" mnemonicParsing="false" onAction="#setUP" prefHeight="17.0" prefWidth="111.0" text="Setup connect">
-                                 <VBox.margin>
-                                    <Insets left="5.0" right="5.0" top="10.0" />
-                                 </VBox.margin></CheckBox>
-                              <Label disable="true" text="Server">
-                                 <VBox.margin>
-                                    <Insets bottom="5.0" left="5.0" top="10.0" />
-                                 </VBox.margin>
-                              </Label>
-                              <TextField fx:id="host" disable="true" text="localhost" />
-                              <Label disable="true" text="Port">
-                                 <VBox.margin>
-                                    <Insets bottom="5.0" left="5.0" top="10.0" />
-                                 </VBox.margin>
-                              </Label>
-                              <TextField fx:id="port" disable="true" text="8999"/>
-                           </children>
-                           <VBox.margin>
-                              <Insets bottom="10.0" top="10.0" />
-                           </VBox.margin>
+<VBox prefHeight="413.0" prefWidth="537.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ru.gb.client.MainControl">
+    <children>
+        <MenuBar>
+            <menus>
+                <Menu mnemonicParsing="false" text="File">
+                    <items>
+                        <MenuItem mnemonicParsing="false" text="Close" />
+                    </items>
+                </Menu>
+                <Menu mnemonicParsing="false" text="Edit">
+                    <items>
+                        <MenuItem mnemonicParsing="false" text="Delete" />
+                    </items>
+                </Menu>
+                <Menu mnemonicParsing="false" text="Help">
+                    <items>
+                        <MenuItem mnemonicParsing="false" text="About" />
+                    </items>
+                </Menu>
+            </menus>
+        </MenuBar>
+        <TabPane fx:id="panel" side="LEFT" tabClosingPolicy="UNAVAILABLE" VBox.vgrow="ALWAYS">
+
+            <tabs>
+                <Tab fx:id="logInItem" text="LogIN">
+                    <content>
+                        <VBox>
+                            <children>
+                                <VBox alignment="CENTER" nodeOrientation="LEFT_TO_RIGHT" prefHeight="400.0" prefWidth="573.0">
+                                    <children>
+                                        <VBox maxWidth="300.0" minWidth="100.0" prefHeight="110.0" prefWidth="300.0">
+                                            <children>
+                                                <Label text="User" />
+                                                <TextField fx:id="user" alignment="TOP_LEFT" maxWidth="300.0" minWidth="100.0" prefHeight="20.0" prefWidth="200.0" VBox.vgrow="ALWAYS">
+                                                    <VBox.margin>
+                                                        <Insets bottom="10.0" top="5.0" />
+                                                    </VBox.margin>
+                                                </TextField>
+                                                <Label text="Password" />
+                                                <TextField fx:id="pass" maxWidth="300.0" minWidth="100.0" prefHeight="20.0" prefWidth="200.0">
+                                                    <VBox.margin>
+                                                        <Insets bottom="10.0" top="5.0" />
+                                                    </VBox.margin>
+                                                </TextField>
+                                                <CheckBox fx:id="checkSetUp" mnemonicParsing="false" onAction="#setUP" prefHeight="17.0" prefWidth="111.0" text="Setup connect">
+                                                    <VBox.margin>
+                                                        <Insets left="5.0" right="5.0" top="10.0" />
+                                                    </VBox.margin>
+                                                </CheckBox>
+                                                <Label disable="true" text="Server">
+                                                    <VBox.margin>
+                                                        <Insets bottom="5.0" left="5.0" top="10.0" />
+                                                    </VBox.margin>
+                                                </Label>
+                                                <TextField fx:id="host" disable="true" text="localhost" />
+                                                <Label disable="true" text="Port">
+                                                    <VBox.margin>
+                                                        <Insets bottom="5.0" left="5.0" top="10.0" />
+                                                    </VBox.margin>
+                                                </Label>
+                                                <TextField fx:id="port" disable="true" text="8999" />
+                                            </children>
+                                            <VBox.margin>
+                                                <Insets bottom="10.0" top="10.0" />
+                                            </VBox.margin>
+                                        </VBox>
+                                        <HBox alignment="CENTER" prefHeight="42.0" prefWidth="572.0">
+                                            <children>
+                                                <Button fx:id="oK" mnemonicParsing="false" onAction="#Auten" prefHeight="25.0" prefWidth="50.0" text="Ok">
+                                                    <HBox.margin>
+                                                        <Insets right="10.0" />
+                                                    </HBox.margin>
+                                                </Button>
+                                                <Button fx:id="Exit" mnemonicParsing="false" onAction="#quit" prefHeight="25.0" prefWidth="50.0" text="Exit">
+                                                    <HBox.margin>
+                                                        <Insets left="10.0" />
+                                                    </HBox.margin>
+                                                </Button>
+                                            </children>
+                                        </HBox>
+                                    </children>
+                                </VBox>
+                            </children>
                         </VBox>
-                        <HBox alignment="CENTER" prefHeight="42.0" prefWidth="572.0">
-                           <children>
-                              <Button fx:id="oK" mnemonicParsing="false" onAction="#Auten" prefHeight="25.0" prefWidth="50.0" text="Ok">
-                                 <HBox.margin>
-                                    <Insets right="10.0" />
-                                 </HBox.margin>
-                              </Button>
-                              <Button fx:id="Exit" mnemonicParsing="false" onAction="#exit" prefHeight="25.0" prefWidth="50.0" text="Exit">
-                                 <HBox.margin>
-                                    <Insets left="10.0" />
-                                 </HBox.margin>
-                              </Button>
-                           </children>
-                        </HBox>
-                     </children>
-                  </VBox>
-               </children></AnchorPane>
-      </content>
-    </Tab>
-    <Tab text="WorkItem">
-      <content>
-        <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
-               <children>
-                  <VBox prefHeight="400.0" prefWidth="570.0" AnchorPane.leftAnchor="0.0">
-                     <children>
-                        <Label text="Local files">
-                           <VBox.margin>
-                              <Insets bottom="5.0" left="10.0" top="5.0" />
-                           </VBox.margin></Label>
-                        <TableView prefHeight="155.0" prefWidth="571.0">
-                          <columns>
-                            <TableColumn prefWidth="75.0" text="C1" />
-                            <TableColumn prefWidth="75.0" text="C2" />
-                          </columns>
-                        </TableView>
-                        <HBox alignment="CENTER_RIGHT" prefHeight="37.0" prefWidth="571.0">
-                           <children>
-                              <Label text="Cloud files">
-                                 <HBox.margin>
-                                    <Insets right="240.0" top="20.0" />
-                                 </HBox.margin>
-                              </Label>
-                              <CheckBox mnemonicParsing="false" text="viwe delete file" />
-                              <Button mnemonicParsing="false" prefWidth="60.0" text="-">
-                                 <HBox.margin>
-                                    <Insets left="10.0" right="10.0" />
-                                 </HBox.margin>
-                              </Button>
-                              <Button mnemonicParsing="false" prefWidth="60.0" text="+">
-                                 <HBox.margin>
-                                    <Insets left="10.0" right="10.0" />
-                                 </HBox.margin></Button>
-                           </children>
-                        </HBox>
-                        <TableView prefHeight="158.0" prefWidth="571.0">
-                          <columns>
-                            <TableColumn prefWidth="75.0" text="C1" />
-                            <TableColumn prefWidth="75.0" text="C2" />
-                          </columns>
-                        </TableView>
-                     </children>
-                  </VBox>
-               </children></AnchorPane>
-      </content>
-    </Tab>
-      <Tab text="SetUp">
-          <content>
-              <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0" />
-          </content>
-      </Tab>
-  </tabs>
-</TabPane>
+                    </content>
+                </Tab>
+                <Tab fx:id="workItem" text="WorkItem">
+                    <content>
+                        <VBox>
+                            <children>
+                                <VBox>
+                                    <children>
+                                        <Label text="Local files">
+                                            <VBox.margin>
+                                                <Insets bottom="5.0" left="10.0" top="5.0" />
+                                            </VBox.margin>
+                                        </Label>
+                                        <ListView fx:id="localList" prefHeight="200.0" prefWidth="550.0" VBox.vgrow="ALWAYS">
+                                 <VBox.margin>
+                                    <Insets left="5.0" right="5.0" />
+                                 </VBox.margin>
+                              </ListView>
+                                        <HBox alignment="CENTER_RIGHT" VBox.vgrow="ALWAYS">
+                                            <children>
+                                                <Label prefHeight="17.0" prefWidth="92.0" text="Cloud files">
+                                                    <HBox.margin>
+                                                        <Insets left="10.0" right="150.0" top="20.0" />
+                                                    </HBox.margin>
+                                                </Label>
+                                                <CheckBox mnemonicParsing="false" prefHeight="17.0" prefWidth="142.0" text="viwe delete file" />
+                                                <Button mnemonicParsing="false" prefHeight="25.0" prefWidth="60.0" text="Ok">
+                                                    <HBox.margin>
+                                                        <Insets left="10.0" right="10.0" />
+                                                    </HBox.margin>
+                                                </Button>
+                                                <Button mnemonicParsing="false" onAction="#clearFile" prefWidth="60.0" text="-">
+                                                    <HBox.margin>
+                                                        <Insets left="10.0" right="10.0" />
+                                                    </HBox.margin>
+                                                </Button>
+                                                <Button mnemonicParsing="false" onAction="#openDialog" prefWidth="60.0" text="+">
+                                                    <HBox.margin>
+                                                        <Insets left="10.0" right="10.0" />
+                                                    </HBox.margin>
+                                                </Button>
+                                            </children>
+                                        </HBox>
+                                        <ListView fx:id="serverList" prefHeight="200.0" prefWidth="550.0" VBox.vgrow="ALWAYS">
+                                 <VBox.margin>
+                                    <Insets left="5.0" right="5.0" />
+                                 </VBox.margin>
+                              </ListView>
+                                    </children>
+                                </VBox>
+                            </children>
+                        </VBox>
+                    </content>
+                </Tab>
+                <Tab fx:id="setUpItem" text="SetUp">
+                    <content>
+                        <VBox />
+                    </content>
+                </Tab>
+            </tabs>
+        </TabPane>
+        <TextField fx:id="statText" editable="false" prefHeight="21.0" prefWidth="614.0" />
+    </children>
+</VBox>

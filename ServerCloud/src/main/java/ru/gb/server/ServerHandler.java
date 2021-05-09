@@ -4,6 +4,7 @@ import io.netty.channel.*;
 import ru.gb.core.*;
 
 import java.io.*;
+import java.util.ArrayList;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 
@@ -23,11 +24,11 @@ public class ServerHandler extends SimpleChannelInboundHandler<Message> {
 
     enum Condition {notAuth, okAuth, newUser}
 
-    ;
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-        cause.printStackTrace();
+        System.out.println("[DEBUG] ОСТАНОВКА ПОТОКА!!!");
+        handlerQueue.interrupt();
         ctx.close();
     }
 
@@ -87,8 +88,7 @@ public class ServerHandler extends SimpleChannelInboundHandler<Message> {
 
     @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
-        System.out.println("[DEBUG] ОСТАНОВКА ПОТОКА!!!");
-        handlerQueue.interrupt();
+        System.out.println("[DEBUG] Inactive");
     }
 
     @Override
@@ -108,6 +108,8 @@ public class ServerHandler extends SimpleChannelInboundHandler<Message> {
             });
             if (this.userID != null) {
                 cond = Condition.okAuth;
+            }else{
+                cond=Condition.notAuth;
             }
         }
         // Добавляем пользователя
@@ -194,14 +196,26 @@ public class ServerHandler extends SimpleChannelInboundHandler<Message> {
 //                                }
 //                            }
                             qTask.add(new ItemTask(ch, fileId));
-                            Answer ans = new Answer(true, "Задача поставлена в очередь.");
+                            Answer ans = new Answer(true, "Задача поставлена в очередь.","upload");
                             ctx.writeAndFlush(ans);
                         }
                     }
                     break;
                 case "list": // список файлов на клиенте
                     if (cond == Condition.okAuth) {
-                        //TODO
+                        Answer answer = new Answer();
+                        answer.setCommandName("list");
+                        ArrayList<String> userFiles = bds.getUserFiles(userID);
+                        for (String userFile : userFiles) {
+                            if (answer.getMessage()==null){
+                                answer.setMessage(userFile);
+                            }else{
+                                answer.setMessage(answer.getMessage()+","+userFile);
+                            }
+                        }
+                        answer.setSuccess(true);
+                        ctx.writeAndFlush(answer);
+                        System.out.println("[DEBUG] command list answer");
                     }
                     break;
                 case "clear": // удалить удаленные файла пользователя
