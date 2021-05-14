@@ -14,6 +14,9 @@ public class BaseDataService implements DataService{
     private static final String GET_FULL_NAME="SELECT full_name FROM CLOUD.data WHERE id=?";
     private static final String GET_FILE_NAME="SELECT name FROM CLOUD.data WHERE id=?";
     private static final String GET_LAST_MOD="SELECT date_last_mod FROM CLOUD.data WHERE id=?";
+    private static final String GET_USER_PATH="SELECT full_name FROM CLOUD.user_path WHERE id_user=?";
+    private static final String DEL_USER_PATH="DELETE FROM CLOUD.user_path WHERE id_user=?";
+    private static final String SET_USER_PATH="INSERT INTO CLOUD.user_path(id_user, full_name) VALUES(?,?)";
 
     private BaseDataService(){};
 
@@ -79,7 +82,7 @@ public class BaseDataService implements DataService{
         try (Connection connection = DataSource.getConnection();
              PreparedStatement ps = connection.prepareStatement(GET_DATE_MOD)) {
             ps.setString(1, userID);
-            ps.setString(1, fullFileName);
+            ps.setString(2, fullFileName);
             ResultSet rs = ps.executeQuery();
             while( rs.next()){
                 res=(rs.getString(1));
@@ -152,6 +155,42 @@ public class BaseDataService implements DataService{
             e.printStackTrace();
         }
         return res;
+    }
+
+    public ArrayList<String> getUserPath(String userID) {
+        ArrayList<String> files=new ArrayList<>();
+        try (Connection connection = DataSource.getConnection();
+             PreparedStatement ps = connection.prepareStatement(GET_USER_PATH)) {
+            ps.setString(1, userID);
+            ResultSet rs = ps.executeQuery();
+            while( rs.next()){
+                files.add(rs.getString(1));
+            }
+            rs.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return files;
+    }
+
+    public void setUserPath(String listPaths,String userID){
+        try (Connection connection = DataSource.getConnection();
+             PreparedStatement psD = connection.prepareStatement(DEL_USER_PATH);
+             PreparedStatement psS= connection.prepareStatement(SET_USER_PATH)) {
+            String[] list=listPaths.split(",");
+            if (list.length>0) {
+                psD.setString(1, userID);
+                psD.executeUpdate();
+                for (String s : list) {
+                    psS.setString(1,userID);
+                    psS.setString(2,s);
+                    psS.executeUpdate();
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
     }
 
 

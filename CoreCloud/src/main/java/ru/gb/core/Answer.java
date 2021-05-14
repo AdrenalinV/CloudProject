@@ -9,12 +9,14 @@ import lombok.Setter;
 public class Answer extends Message{
 
     public Answer(){};
-    public Answer(boolean success, String message, String commandName) {
+    public Answer(boolean success, String message, CommandType commandName) {
         this.success = success;
         Message = message;
         this.commandName=commandName;
     }
-    private String commandName;
+    private CommandType commandName = CommandType.none;
+    private String commandValue;
     private boolean success=false;
     private String Message;
+
 }

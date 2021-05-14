@@ -7,21 +7,13 @@ import java.io.StringWriter;
 import java.util.List;
 
 public class MyJsonEncoder extends MessageToMessageEncoder<Message> {
-    private final ObjectMapper mapper;
-    private final StringWriter writer;
+    private static final ObjectMapper MAPPER=new ObjectMapper();
 
     @Override
     public void encode(ChannelHandlerContext channelHandlerContext, Message msg, List<Object> list) throws Exception {
-        mapper.writeValue(writer,msg);
-        list.add(writer.toString());
-        writer.getBuffer().setLength(0);
-
+        list.add(MAPPER.writeValueAsString(msg));
     }
 
-    public MyJsonEncoder() {
-        this.mapper=new ObjectMapper();
-        this.writer= new StringWriter();
-    }
 
 
 }

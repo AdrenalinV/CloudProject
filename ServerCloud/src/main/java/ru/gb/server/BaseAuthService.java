@@ -17,6 +17,10 @@ public class BaseAuthService implements AuthService {
             "date_last_mod LONG NOT NULL," +
             "date_del LONG," +
             "FOREIGN KEY (id_user) REFERENCES CLOUD.user(id));" +
+            "CREATE TABLE IF NOT EXISTS CLOUD.user_path ( id INTEGER PRIMARY KEY AUTO_INCREMENT NOT NULL," +
+            "id_user INTEGER NOT NULL," +
+            "full_name VARCHAR(255) NOT NULL," +
+            "FOREIGN KEY (id_user) REFERENCES CLOUD.user(id));" +
             "COMMIT;";
     private static final String EXIST_USER = "SELECT * FROM CLOUD.user WHERE login=?";
     private static final String ADD_USER = "INSERT INTO CLOUD.user(login, pass) VALUES (?, ?)";

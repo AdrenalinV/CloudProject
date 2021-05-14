@@ -1,15 +1,16 @@
 package ru.gb.client;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
+
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.image.ImageView;
 import javafx.stage.Stage;
-
 import java.io.IOException;
 import java.io.InputStream;
 
 public class Main extends Application {
-    public static void main(String[] args)  throws InterruptedException {
+    public static void main(String[] args) {
         Main.launch();
     }
 
@@ -17,6 +18,10 @@ public class Main extends Application {
     public void start(Stage stage) throws Exception {
         MainControl mainControl=(MainControl) init(stage, "fxml/MainWindow.fxml");
         stage.show();
+        mainControl.getPanel().setTabMaxHeight(45);
+        mainControl.getPanel().setTabMaxHeight(45);
+        mainControl.getLogInItem().setGraphic(new ImageView("img/logIN.png"));
+        mainControl.getWorkItem().setGraphic(new ImageView("img/data.png"));
         stage.setOnCloseRequest(request->{
            if (Network.isLive()){
                Network b= Network.getInstance(mainControl);
@@ -33,4 +38,5 @@ public class Main extends Application {
             return fxmlloader.getController();
         }
     }
+
 }

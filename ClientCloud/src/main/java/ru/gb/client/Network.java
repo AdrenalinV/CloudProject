@@ -19,7 +19,6 @@ import ru.gb.core.AuthentcationRequest;
 import ru.gb.core.MyJsonDecoder;
 import ru.gb.core.MyJsonEncoder;
 import java.nio.charset.StandardCharsets;
-import java.util.Collection;
 
 @Getter
 public class Network {
@@ -86,10 +85,13 @@ public class Network {
     }
     public void close(){
         socketChanel.close();
+        System.out.println("[DEBUG] socket close");
     }
     public static boolean isLive(){
         return item!=null;
     }
+
+
 
 
 }

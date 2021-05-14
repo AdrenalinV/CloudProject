@@ -1,7 +1,6 @@
 package ru.gb.core;
 import lombok.Getter;
 
-import javax.management.BadAttributeValueExpException;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -10,8 +9,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 @Getter
 public class LocalFIle {
-    FileOutputStream fs=null;
-    String outPath;
+    private FileOutputStream fs=null;
+    private String outPath;
 
     public LocalFIle(String outPath) throws FileNotFoundException {
         if (outPath!=null){

@@ -5,19 +5,23 @@ import javafx.application.Platform;
 import javafx.collections.ObservableList;
 import javafx.scene.control.*;
 import lombok.Getter;
+import ru.gb.core.AuthentcationRequest;
 import ru.gb.core.Command;
+import ru.gb.core.CommandType;
 
 import javax.swing.*;
 import java.io.File;
 
+
 @Getter
 public class MainControl {
+    private Network con;
     public ListView<String> localList;
     public ListView<String> serverList;
+    public Tab logInItem;
     public Tab workItem;
     public TabPane panel;
     public TextField statText;
-    private Network con;
     public TextField user;
     public TextField pass;
     public CheckBox checkSetUp;
@@ -25,6 +29,7 @@ public class MainControl {
     public TextField port;
     public Button oK;
     public Button Exit;
+
 
     public void openDialog() {
         JFrame myFrame = new JFrame();
@@ -44,16 +49,56 @@ public class MainControl {
         }
     }
 
+
     public void clearFile() {
         localList.getItems().remove(localList.getSelectionModel().getSelectedItem());
+    }
+
+    public void setList() {
+        System.out.println("[DEBUG] setList command");
+        String list = null;
+        ObservableList<String> items = localList.getItems();
+        for (String item : items) {
+            if (list == null) {
+                list = item;
+            } else {
+                list += "," + item;
+            }
+            System.out.println("[DEBUG] list " + list);
+            Command cMsg = new Command(CommandType.setList, list);
+            con.getSocketChanel().writeAndFlush(cMsg);
+        }
+    }
+
+    public void addUser() {
+        if (host.getLength() > 0 && port.getLength() > 0 &&
+                user.getLength() > 0 && pass.getLength() > 0) {
+            con = Network.getInstance(this);
+            Command cMsg = new Command(CommandType.crUser, "");
+            con.getSocketChanel().writeAndFlush(cMsg);
+            AuthentcationRequest aMsg = new AuthentcationRequest();
+            aMsg.setUser(user.getText());
+            aMsg.setPass(pass.getText());
+            con.getSocketChanel().writeAndFlush(aMsg);
+            pass.clear();
+        } else {
+            setStatus("Внимание! Заполните логин и пароль!!! ");
+        }
     }
 
     enum Condition {notAuth, okAuth}
 
     // поднимает коннект и пытается авторизоваться
     public void Auten() {
-        if (host.getLength() > 0 && port.getLength() > 0 &&
-                user.getLength() > 0 && pass.getLength() > 0) {
+        if (host!=null &&
+                host.getLength() > 0 &&
+                port!=null &&
+                port.getLength() > 0 &&
+                user!=null &&
+                user.getLength() > 0 &&
+                pass!=null &&
+                pass.getLength() > 0
+                ) {
             con = Network.getInstance(this);
             System.out.println("[DEBUG] up connect to server");
             con.autent(user.getText(), pass.getText());
@@ -64,8 +109,8 @@ public class MainControl {
     public void quit() {
         if (con != null) {
             con.close();
-            Platform.exit();
         }
+        Platform.exit();
     }
 
     // активирует настройки подключения
@@ -75,30 +120,43 @@ public class MainControl {
     }
 
     // отключаем настройки входа.
-    public void autOK(){
+    public void autOK() {
         oK.setDisable(true);
         user.setDisable(true);
         pass.setDisable(true);
         checkSetUp.setDisable(true);
         host.setDisable(true);
         port.setDisable(true);
-        statText.setText("Добро пожаловать.");
+        panel.getSelectionModel().select(workItem);
+        logInItem.setDisable(true);
         System.out.println("[DEBUG] disable btn ok");
     }
-    public void addServerList(String[] fullName){
+
+    public void addServerList(String[] fullName) {
         serverList.getItems().clear();
         serverList.getItems().addAll(fullName);
         ObservableList<String> items = serverList.getItems();
         for (String item : items) {
-            File file=new File(item);
-            if (!file.exists()){
-                Command cMsg=new Command("upload",item);
-                con.getSocketChanel().writeAndFlush(cMsg);
-                System.out.println("[DEBUG] command upload");
-            }localList.getItems().add(item);
-            panel.getSelectionModel().select(workItem);
+            File file = new File(item);
+            if (file.exists()) {
+                localList.getItems().add(item);
+            }
         }
+        synchroCloud();
 
+    }
+
+    public void setStatus(String message) {
+        if (message == null) {
+            statText.clear();
+        } else {
+            statText.setText(message);
+        }
+    }
+
+    public void synchroCloud() {
+        Command cMsg=new Command(CommandType.userFiles,"");
+        con.getSocketChanel().writeAndFlush(cMsg);
     }
 
 }

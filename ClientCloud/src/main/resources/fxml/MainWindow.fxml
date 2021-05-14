@@ -1,17 +1,19 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import java.lang.*?>
 <?import javafx.geometry.*?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-<VBox prefHeight="413.0" prefWidth="537.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ru.gb.client.MainControl">
+<VBox prefHeight="413.0" prefWidth="537.0" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ru.gb.client.MainControl">
     <children>
         <MenuBar>
             <menus>
                 <Menu mnemonicParsing="false" text="File">
                     <items>
-                        <MenuItem mnemonicParsing="false" text="Close" />
+                        <MenuItem mnemonicParsing="false" text="Вход" />
+                        <MenuItem mnemonicParsing="false" text="Настройки" />
+                        <SeparatorMenuItem />
+                        <MenuItem mnemonicParsing="false" onAction="#quit" text="Выход" />
                     </items>
                 </Menu>
                 <Menu mnemonicParsing="false" text="Edit">
@@ -29,7 +31,7 @@
         <TabPane fx:id="panel" side="LEFT" tabClosingPolicy="UNAVAILABLE" VBox.vgrow="ALWAYS">
 
             <tabs>
-                <Tab fx:id="logInItem" text="LogIN">
+                <Tab fx:id="logInItem">
                     <content>
                         <VBox>
                             <children>
@@ -78,7 +80,7 @@
                                                         <Insets right="10.0" />
                                                     </HBox.margin>
                                                 </Button>
-                                                <Button fx:id="Exit" mnemonicParsing="false" onAction="#quit" prefHeight="25.0" prefWidth="50.0" text="Exit">
+                                                <Button mnemonicParsing="false" onAction="#addUser" prefHeight="25.0" prefWidth="50.0" text="addUser">
                                                     <HBox.margin>
                                                         <Insets left="10.0" />
                                                     </HBox.margin>
@@ -91,7 +93,7 @@
                         </VBox>
                     </content>
                 </Tab>
-                <Tab fx:id="workItem" text="WorkItem">
+                <Tab fx:id="workItem">
                     <content>
                         <VBox>
                             <children>
@@ -102,7 +104,7 @@
                                                 <Insets bottom="5.0" left="10.0" top="5.0" />
                                             </VBox.margin>
                                         </Label>
-                                        <ListView fx:id="localList" prefHeight="200.0" prefWidth="550.0" VBox.vgrow="ALWAYS">
+                                        <ListView fx:id="localList" VBox.vgrow="ALWAYS">
                                  <VBox.margin>
                                     <Insets left="5.0" right="5.0" />
                                  </VBox.margin>
@@ -115,7 +117,7 @@
                                                     </HBox.margin>
                                                 </Label>
                                                 <CheckBox mnemonicParsing="false" prefHeight="17.0" prefWidth="142.0" text="viwe delete file" />
-                                                <Button mnemonicParsing="false" prefHeight="25.0" prefWidth="60.0" text="Ok">
+                                                <Button mnemonicParsing="false" onAction="#setList" prefHeight="25.0" prefWidth="60.0" text="Ok">
                                                     <HBox.margin>
                                                         <Insets left="10.0" right="10.0" />
                                                     </HBox.margin>
@@ -132,7 +134,7 @@
                                                 </Button>
                                             </children>
                                         </HBox>
-                                        <ListView fx:id="serverList" prefHeight="200.0" prefWidth="550.0" VBox.vgrow="ALWAYS">
+                                        <ListView fx:id="serverList" VBox.vgrow="ALWAYS">
                                  <VBox.margin>
                                     <Insets left="5.0" right="5.0" />
                                  </VBox.margin>
@@ -141,11 +143,6 @@
                                 </VBox>
                             </children>
                         </VBox>
-                    </content>
-                </Tab>
-                <Tab fx:id="setUpItem" text="SetUp">
-                    <content>
-                        <VBox />
                     </content>
                 </Tab>
             </tabs>
