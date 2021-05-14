@@ -6,13 +6,10 @@ import io.netty.handler.codec.MessageToMessageDecoder;
 import java.util.List;
 
 public class MyJsonDecoder extends MessageToMessageDecoder<String> {
-    private ObjectMapper mapper=null;
-    public MyJsonDecoder() {
-        this.mapper=new ObjectMapper();
-    }
+    private static final ObjectMapper MAPPER =new ObjectMapper();
 
     @Override
     public void decode(ChannelHandlerContext ctx, String s, List<Object> list) throws Exception {
-        list.add(mapper.readValue(s,Message.class));
+        list.add(MAPPER.readValue(s,Message.class));
     }
 }
