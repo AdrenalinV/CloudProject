@@ -1,53 +1,83 @@
 package ru.gb.server;
 
 import io.netty.channel.*;
+import lombok.extern.log4j.Log4j2;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import ru.gb.core.*;
 
 import java.io.*;
 import java.util.ArrayList;
 import java.util.concurrent.ConcurrentLinkedQueue;
-
+import java.util.concurrent.ExecutorService;
+@Log4j2
 
 public class ServerHandler extends SimpleChannelInboundHandler<Message> {
-
-    private Thread handlerQueue;
-    private ConcurrentLinkedQueue<ItemTask> qTask = new ConcurrentLinkedQueue<>();
+    public static final Logger slog = LogManager.getLogger("Secure");
     private static final String OUT_DIR = "C:\\Cloud\\";
+    private final ExecutorService threadPull;
+    private final ConcurrentLinkedQueue<ItemTask> qTask = new ConcurrentLinkedQueue<>();
+    private final BaseAuthService bas = BaseAuthService.of();
+    private final BaseDataService bds = BaseDataService.of();
+    private Runnable handlerQueue;
     private Condition cond = Condition.notAuth;
     private String userID = null;
     private Channel ch = null;
-    private BaseAuthService bas = BaseAuthService.of();
-    private BaseDataService bds = BaseDataService.of();
-    private byte[] buf = new byte[1024 * 1024];
-    private DataSet tmp = null;
-    private FileInputStream in = null;
+
 
     enum Condition {notAuth, okAuth, newUser}
 
+    public ServerHandler(ExecutorService threadPull) {
+        this.threadPull = threadPull;
+    }
 
     @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-        System.out.println("[DEBUG] ОСТАНОВКА ПОТОКА!!!");
-        handlerQueue.interrupt();
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
+        log.debug("error channel");
         ctx.close();
     }
 
     @Override
-    public void channelActive(ChannelHandlerContext ctx) throws Exception {
+    public void channelActive(ChannelHandlerContext ctx) {
         ch = ctx.channel();
         // Обработчик задач на отправку
-        handlerQueue = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                queueHandler();
+        handlerQueue = (() -> {
+            byte[] buf = new byte[1024 * 1024];
+            int size;
+            int allPart;
+            int tPart;
+            long lastMod;
+            String fullName;
+            String fileName;
+            DataSet tmp;
+            log.debug("start task handler");
+            while (!qTask.isEmpty()) {
+                ItemTask t = qTask.poll();
+                File fin = new File(OUT_DIR + userID + "\\" + t.getFileID());
+                tPart = 0;
+                allPart = (int) (fin.length() / (1024 * 1024)) + (fin.length() % (1024 * 1024) != 0 ? 1 : 0);
+                fullName = bds.getFullName(t.getFileID());
+                fileName = bds.getFileName(t.getFileID());
+                lastMod = Long.parseLong(bds.getLastMod(t.getFileID()));
+                log.debug("start send client file: " + fileName);
+                try (FileInputStream inF = new FileInputStream(fin)) {
+                    while (inF.available() != 0) {
+                        size = inF.read(buf);
+                        tmp = new DataSet(fullName, fileName, lastMod, allPart, ++tPart, size, buf);
+                        t.getCh().writeAndFlush(tmp).sync();
+                    }
+                    log.debug("start send client file: " + fileName);
+                } catch (FileNotFoundException e) {
+                    e.printStackTrace();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                } catch (IOException ioException) {
+                    ioException.printStackTrace();
+                }
             }
+            log.debug("stop task handler");
         });
 
-    }
-
-    @Override
-    public void channelInactive(ChannelHandlerContext ctx) throws Exception {
-        System.out.println("[DEBUG] Inactive");
     }
 
     @Override
@@ -61,14 +91,16 @@ public class ServerHandler extends SimpleChannelInboundHandler<Message> {
             ChannelFuture f = ch.writeAndFlush(aMsg);
             f.addListener(new ChannelFutureListener() {
                 @Override
-                public void operationComplete(ChannelFuture future) throws Exception {
+                public void operationComplete(ChannelFuture future) {
                     assert f == future;
                 }
             });
             if (this.userID != null) {
                 cond = Condition.okAuth;
+                slog.debug("authentication completed User: {}",aMsg.getUser());
             } else {
                 cond = Condition.notAuth;
+                slog.warn("authentication error User: {} Password: {}",aMsg.getUser(),aMsg.getPass());
             }
         }
         // Добавляем пользователя
@@ -90,7 +122,7 @@ public class ServerHandler extends SimpleChannelInboundHandler<Message> {
             ChannelFuture f = ch.writeAndFlush(ans);
             f.addListener(new ChannelFutureListener() {
                 @Override
-                public void operationComplete(ChannelFuture future) throws Exception {
+                public void operationComplete(ChannelFuture future) {
                     assert f == future;
                 }
             });
@@ -101,8 +133,11 @@ public class ServerHandler extends SimpleChannelInboundHandler<Message> {
         if (msg instanceof DataSet) {
             if (cond == Condition.okAuth) {
                 DataSet dMsg = (DataSet) msg;
-                String fileID = bds.getUserFile(userID, dMsg.getPathFile());
-                if (dMsg.getTpart() == 1 && fileID ==null) {
+                log.debug("received dataSet " + dMsg.getNameFile());
+                String fileID = bds.getUserFile(userID, dMsg.getPathFile()); // получаем файл ID
+                if (dMsg.getTpart() == 1 && fileID != null) {
+                    bds.setLastMod(dMsg.getDateMod(), fileID);
+                } else if (dMsg.getTpart() == 1 && fileID == null) {
                     bds.uploadFile(userID, dMsg);
                     fileID = bds.getUserFile(userID, dMsg.getPathFile());
                 }
@@ -115,55 +150,23 @@ public class ServerHandler extends SimpleChannelInboundHandler<Message> {
         // пришла команда
         if (msg instanceof Command) {
             Command cMsg = (Command) msg;
-            System.out.println("[DEBUG] Пришла команда: " + cMsg.getCommandName() + " Значение : " + cMsg.getValue());
+            log.debug("received command : " + cMsg.getCommandName() + " Значение : " + cMsg.getValue());
             switch (cMsg.getCommandName()) {
                 case crUser:  // создать пользователя
                     if (cond == Condition.notAuth) {
                         cond = Condition.newUser;
-                        System.out.println("[DEBUG] setStat newUser");
+                        log.debug("handler crUser");
                     }
                     break;
                 case upload: // отправить файл клиенту
                     if (cond == Condition.okAuth) {
                         if (cMsg.getValue() != null) {
                             String fileId = bds.getUserFile(userID, cMsg.getValue());
-//                            System.out.println("[DEBUG] отправляем файл");
-//                            File fin = new File(OUT_DIR + userID + "\\" + fileId);
-//
-//                            byte[] buf = new byte[1024 * 1024];
-//                            DataSet tmp;
-//                            int size;
-//                            String fullName;
-//                            String fileName;
-//                            long lastMod;
-//                            int allPart;
-//                            int tPart;
-//                            tPart = 0;
-//                            allPart = (int) (fin.length() / (1024 * 1024)) + (fin.length() % (1024 * 1024) != 0 ? 1 : 0);
-//                            fullName = bds.getFullName(fileId);
-//                            fileName = bds.getFileName(fileId);
-//                            lastMod = Long.parseLong(bds.getLastMod(fileId));
-//                            System.out.println("[DEBUG] отправляем файл");
-//                            try (FileInputStream inF = new FileInputStream(fin)) {
-//                                while (inF.available() != 0) {
-//                                    size = inF.read(buf);
-//                                    tmp = new DataSet(fullName, fileName, lastMod, allPart, ++tPart, size, buf);
-//                                    ChannelFuture f = ch.writeAndFlush(tmp);
-//                                    f.addListener(new ChannelFutureListener() {
-//                                        @Override
-//                                        public void operationComplete(ChannelFuture future) throws Exception {
-//                                            assert f == future;
-//                                        }
-//                                    });
-//                                }
-//                            }
                             qTask.add(new ItemTask(ch, fileId));
+                            threadPull.submit(handlerQueue);
                             Answer ans = new Answer(true, "task add in queue", CommandType.upload);
                             ctx.writeAndFlush(ans);
-                            System.out.println("[DEBUG] command upload answer");
-                            if (!handlerQueue.isAlive()) {
-                                handlerQueue.start();
-                            }
+                            log.debug("handler upload");
                         }
                     }
                     break;
@@ -181,7 +184,7 @@ public class ServerHandler extends SimpleChannelInboundHandler<Message> {
                         }
                         answer.setSuccess(true);
                         ctx.writeAndFlush(answer);
-                        System.out.println("[DEBUG] command getList answer");
+                        log.debug("handler getList");
                     }
                     break;
                 case setList: // список файлов на клиенте
@@ -191,7 +194,7 @@ public class ServerHandler extends SimpleChannelInboundHandler<Message> {
                         bds.setUserPath(cMsg.getValue(), userID);
                         answer.setSuccess(true);
                         ctx.writeAndFlush(answer);
-                        System.out.println("[DEBUG] command setList answer");
+                        log.debug("handler setList");
                     }
                     break;
                 case userFiles:
@@ -208,80 +211,45 @@ public class ServerHandler extends SimpleChannelInboundHandler<Message> {
                         }
                         answer.setSuccess(true);
                         ctx.writeAndFlush(answer);
-                        System.out.println("[DEBUG] command getList answer");
+                        log.debug("handler userFiles");
                     }
                     break;
                 case getLastMod: // запрос последней модификации файла
                     if (cond == Condition.okAuth) {
-                        long result=-1l;
-                        Answer ans=new Answer();
+                        long result = 0L;
+                        Answer ans = new Answer();
                         ans.setCommandName(CommandType.getLastMod);
-                        if (cMsg.getValue()!=null){
-                            result= bds.getLastModTime(userID,cMsg.getValue());
+                        if (cMsg.getValue() != null) {
+                            result = bds.getLastModTime(userID, cMsg.getValue());
                             ans.setCommandValue(cMsg.getValue());
                             ans.setSuccess(true);
                         }
                         ans.setMessage(String.valueOf(result));
                         ctx.writeAndFlush(ans);
-                        System.out.println("[DEBUG] command getLastMod answer");
+                        log.debug("handler getLastMod");
                     }
                     break;
                 case clear: // удалить удаленные файла пользователя
                     if (cond == Condition.okAuth) {
                         //TODO server clear
+                        log.debug("handler clear");
                     }
                     break;
                 case delete: // удалить файла пользователя
                     if (cond == Condition.okAuth) {
                         //TODO server delete.
+                        log.debug("handler delete");
                     }
                     break;
                 case undelete: // востановить удаленный файла пользователя
                     if (cond == Condition.okAuth) {
                         //TODO server undelete
+                        log.debug("handler undelete");
                     }
                     break;
             }
 
         }
     }
-
-    private void queueHandler() {
-        byte[] buf = new byte[1024 * 1024];
-        DataSet tmp;
-        int size;
-        String fullName;
-        String fileName;
-        long lastMod;
-        int allPart;
-        int tPart;
-        System.out.println("[DEBUG] start task handler");
-        while (!qTask.isEmpty()) {
-            ItemTask t = qTask.poll();
-            File fin = new File(OUT_DIR + userID + "\\" + t.getFileID());
-            tPart = 0;
-            allPart = (int) (fin.length() / (1024 * 1024)) + (fin.length() % (1024 * 1024) != 0 ? 1 : 0);
-            fullName = bds.getFullName(t.getFileID());
-            fileName = bds.getFileName(t.getFileID());
-            lastMod = Long.parseLong(bds.getLastMod(t.getFileID()));
-            System.out.println("[DEBUG] отправляем файл: " + fileName);
-            try (FileInputStream inF = new FileInputStream(fin)) {
-                while (inF.available() != 0) {
-                    size = inF.read(buf);
-                    tmp = new DataSet(fullName, fileName, lastMod, allPart, ++tPart, size, buf);
-                    t.getCh().writeAndFlush(tmp).sync();
-                }
-                System.out.println("[DEBUG]  отправлен файл: " + fileName);
-            } catch (FileNotFoundException e) {
-                e.printStackTrace();
-            } catch (IOException ioException) {
-                ioException.printStackTrace();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
-        System.out.println("[DEBUG] stop task handler");
-    }
-
 
 }

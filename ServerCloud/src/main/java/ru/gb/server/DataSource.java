@@ -1,4 +1,6 @@
 package ru.gb.server;
+
+
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -11,7 +13,6 @@ public class DataSource {
             Class.forName(DB_DRIVER);
         } catch (ClassNotFoundException e) {
             e.printStackTrace();
-            System.err.println("JDBC драйвер не найден");
             throw new RuntimeException("Database Driver initialization Error");
         }
 

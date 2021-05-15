@@ -1,10 +1,14 @@
 package ru.gb.server;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.sql.*;
 
 public class BaseAuthService implements AuthService {
+    public static final Logger log = LogManager.getLogger(BaseAuthService.class.getName());
     private static BaseAuthService bas = null;
     private static final String INIT_DB = "CREATE SCHEMA IF NOT EXISTS CLOUD;" +
             "CREATE TABLE IF NOT EXISTS CLOUD.user (id INTEGER PRIMARY KEY AUTO_INCREMENT NOT NULL," +
@@ -38,6 +42,7 @@ public class BaseAuthService implements AuthService {
     public static BaseAuthService of() {
         if (bas == null) {
             try {
+                log.debug("start authentication service");
                 bas = new BaseAuthService();
             } catch (SQLException throwables) {
                 throwables.printStackTrace();
@@ -49,14 +54,14 @@ public class BaseAuthService implements AuthService {
 
     @Override
     public String getAuthByLoginPass(String login, String pass) {
-        String res=null;
+        String res = null;
         try (Connection connection = DataSource.getConnection();
              PreparedStatement ps = connection.prepareStatement(GET_AUTH_BY_LOGIN_PASS)) {
             ps.setString(1, login);
             ps.setString(2, getPassword(pass));
             ResultSet rs = ps.executeQuery();
-            while( rs.next()){
-                res=rs.getString(1);
+            while (rs.next()) {
+                res = rs.getString(1);
             }
             rs.close();
         } catch (SQLException e) {
@@ -67,6 +72,7 @@ public class BaseAuthService implements AuthService {
 
     @Override
     public void createUser(String userName, String plainUserPassword) {
+        log.trace("create new user: {}", userName);
         try (Connection connection = DataSource.getConnection();
              PreparedStatement ps = connection.prepareStatement(ADD_USER)) {
             ps.setString(1, userName);
@@ -80,6 +86,7 @@ public class BaseAuthService implements AuthService {
 
     @Override
     public boolean existUser(String userName) {
+        log.trace("exist nickName user: {}", userName);
         boolean isExist = false;
         try (Connection con = DataSource.getConnection();
              PreparedStatement ps = con.prepareStatement(EXIST_USER)) {

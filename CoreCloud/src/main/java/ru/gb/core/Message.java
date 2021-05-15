@@ -3,7 +3,6 @@ package ru.gb.core;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
-import java.lang.annotation.Target;
 
 @JsonTypeInfo(
         use = JsonTypeInfo.Id.NAME,

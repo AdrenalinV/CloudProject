@@ -1,11 +1,14 @@
 package ru.gb.core;
+
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.util.Arrays;
 
 @JsonAutoDetect
-@Data
+@Getter
+@Setter
 public class DataSet extends Message {
     String pathFile;
     String nameFile;
@@ -24,5 +27,5 @@ public class DataSet extends Message {
         this.size = size;
         this.data = Arrays.copyOf(data, size);
     }
-    public DataSet(){};
+
 }

@@ -18,16 +18,20 @@ import lombok.Getter;
 import ru.gb.core.AuthentcationRequest;
 import ru.gb.core.MyJsonDecoder;
 import ru.gb.core.MyJsonEncoder;
+
 import java.nio.charset.StandardCharsets;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 @Getter
 public class Network {
+
     private static Network item;
     private SocketChannel socketChanel;
-    private static final String SERVER="localhost";
-    private static final int PORT=8999;
+    private static final String SERVER = "localhost";
+    private static final int PORT = 8999;
 
-    public static Network getInstance(MainControl mControl)  {
+    public static Network getInstance(MainControl mControl) {
         if (item == null || !item.socketChanel.isActive()) {
             item = new Network(mControl);
         }
@@ -38,6 +42,7 @@ public class Network {
     private Network(MainControl mControl) {
         new Thread(() -> {
             EventLoopGroup bossGroup = new NioEventLoopGroup();
+            ExecutorService threadPull = Executors.newCachedThreadPool();
             try {
                 System.out.println("[DEBUG] RUN Connect");
                 Bootstrap b = new Bootstrap();
@@ -57,7 +62,7 @@ public class Network {
                                         new StringDecoder(StandardCharsets.UTF_8),
                                         new MyJsonEncoder(),
                                         new MyJsonDecoder(),
-                                        new ClientHandler(mControl)
+                                        new ClientHandler(mControl, threadPull)
                                 );
                             }
                         });
@@ -67,10 +72,11 @@ public class Network {
                 e.printStackTrace();
             } finally {
                 bossGroup.shutdownGracefully();
+                threadPull.shutdown();
             }
         }).start();
         try {
-            Thread.currentThread().sleep(1000);
+            Thread.sleep(1000);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -83,15 +89,15 @@ public class Network {
         aMsg.setPass(passw);
         socketChanel.writeAndFlush(aMsg);
     }
-    public void close(){
+
+    public void close() {
         socketChanel.close();
         System.out.println("[DEBUG] socket close");
     }
-    public static boolean isLive(){
-        return item!=null;
+
+    public static boolean isLive() {
+        return item != null;
     }
-
-
 
 
 }

@@ -5,7 +5,7 @@ import java.util.ArrayList;
 
 public interface DataService {
 
-    ArrayList getUserFiles(String userID);
+    ArrayList<String> getUserFiles(String userID);
     String getUserFile(String userID, String fileName);
     void uploadFile(String userId, DataSet ds);
     long getLastModTime(String userID,String fullName);
@@ -13,5 +13,9 @@ public interface DataService {
     String getFullName( String fileID);
     String getFileName( String fileID);
     String getLastMod( String fileID);
+    void setLastMod(long lastMod, String fileID);
+    ArrayList<String> getUserPath(String userID);
+    void setUserPath(String listPaths, String userID);
+
 
 }
