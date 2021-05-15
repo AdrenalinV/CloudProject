@@ -127,6 +127,7 @@ public class MainControl {
         port.setDisable(true);
         panel.getSelectionModel().select(workItem);
         logInItem.setDisable(true);
+
         System.out.println("[DEBUG] disable btn ok");
     }
 

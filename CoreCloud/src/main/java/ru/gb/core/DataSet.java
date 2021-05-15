@@ -18,6 +18,10 @@ public class DataSet extends Message {
     int size;
     byte[] data;
 
+    public DataSet(){
+
+    }
+
     public DataSet(String pathFile, String nameFile, long dateMod, int allPart, int tpart, int size, byte[] data) {
         this.pathFile = pathFile;
         this.nameFile = nameFile;

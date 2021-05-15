@@ -11,6 +11,9 @@ public class Command extends Message {
     private CommandType commandName;
     private String value;
 
+    public Command() {
+    }
+
     public Command(CommandType commandName, String value) {
         this.commandName = commandName;
         this.value = value;

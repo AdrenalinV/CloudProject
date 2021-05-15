@@ -2,19 +2,21 @@ package ru.gb.client;
 
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
+import javafx.collections.ObservableList;
 import ru.gb.core.*;
 
 import java.io.*;
+import java.util.ArrayList;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
 
 
 public class ClientHandler extends SimpleChannelInboundHandler<Message> {
     private final ExecutorService threadPull;
-    private final MainControl mControl;               //
+    private final MainControl mControl;
     private final ConcurrentLinkedQueue<TaskClient> myQueue = new ConcurrentLinkedQueue<>();
-    private Runnable handler;                   //
-    private ChannelHandlerContext context;      //
+    private Runnable handler;
+    private ChannelHandlerContext context;
 
     public ClientHandler(MainControl mControl, ExecutorService threadPull) {
         this.mControl = mControl;
@@ -53,16 +55,24 @@ public class ClientHandler extends SimpleChannelInboundHandler<Message> {
                 case userFiles:
                     System.out.println("[DEBUG] userFiles command");
                     System.out.println("[DEBUG] " + ans.getMessage());
+                    ArrayList<File> localFiles = new ArrayList<>();        // список локальных файлов
+                    final ObservableList<String> items = mControl.getLocalList().getItems();
+                    for (String item : items) {
+                        localFiles.addAll(LocalFIle.getFiles(item));
+                    }
                     if (ans.getMessage() != null) {
                         String[] fil = ans.getMessage().split(",");
                         File tmp;
                         for (String s : fil) {
                             tmp = new File(s);
                             myQueue.add(new TaskClient(tmp, TypeTask.info));
-                            threadPull.submit(handler);
+                            localFiles.remove(tmp);                      // удаляем файл который есть на сервере
                         }
-
                     }
+                    for (File file : localFiles) {
+                        myQueue.add(new TaskClient(file, TypeTask.upload)); // задачи на загрузку файлов которых нет на сервере
+                    }
+                    threadPull.submit(handler);
                     break;
                 case getLastMod: // запрос даты последней модификации
                     System.out.println("[DEBUG] getLastMod command");
@@ -106,6 +116,9 @@ public class ClientHandler extends SimpleChannelInboundHandler<Message> {
                     " / " + dMsg.getAllPart());
             File outFile = new File(dMsg.getPathFile());
             if (dMsg.getTpart() == 1) {
+                if (!outFile.getParentFile().exists()) {
+                    outFile.getParentFile().mkdirs();
+                }
                 try (FileOutputStream outF = new FileOutputStream(outFile, false)) {
                     outF.write(dMsg.getData());
                     outF.flush();
