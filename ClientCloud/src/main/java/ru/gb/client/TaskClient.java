@@ -4,6 +4,7 @@ package ru.gb.client;
 import lombok.Getter;
 
 import java.io.File;
+
 @Getter
 public class TaskClient {
     private final File workFile;

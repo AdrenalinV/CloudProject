@@ -86,19 +86,17 @@ public class MainControl {
         }
     }
 
-    enum Condition {notAuth, okAuth}
-
     // поднимает коннект и пытается авторизоваться
     public void Auten() {
-        if (host!=null &&
+        if (host != null &&
                 host.getLength() > 0 &&
-                port!=null &&
+                port != null &&
                 port.getLength() > 0 &&
-                user!=null &&
+                user != null &&
                 user.getLength() > 0 &&
-                pass!=null &&
+                pass != null &&
                 pass.getLength() > 0
-                ) {
+        ) {
             con = Network.getInstance(this);
             System.out.println("[DEBUG] up connect to server");
             con.autent(user.getText(), pass.getText());
@@ -155,7 +153,7 @@ public class MainControl {
     }
 
     public void synchroCloud() {
-        Command cMsg=new Command(CommandType.userFiles,"");
+        Command cMsg = new Command(CommandType.userFiles, "");
         con.getSocketChanel().writeAndFlush(cMsg);
     }
 

@@ -1,4 +1,6 @@
 package ru.gb.client;
 
-public enum TypeTask {info,upload
+public enum TypeTask {
+    info,
+    upload
 }

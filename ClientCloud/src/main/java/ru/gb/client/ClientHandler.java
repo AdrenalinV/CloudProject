@@ -6,18 +6,19 @@ import ru.gb.core.*;
 
 import java.io.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ExecutorService;
 
 
 public class ClientHandler extends SimpleChannelInboundHandler<Message> {
-    private Thread t;
-    private MainControl mControl;
-    private ConcurrentLinkedQueue<TaskClient> myQueue=new ConcurrentLinkedQueue<>();
-    private LocalFIle lf;
-    private byte[] buf = new byte[1024 * 1024];
-    private DataSet tmp;
+    private final ExecutorService threadPull;
+    private final MainControl mControl;               //
+    private final ConcurrentLinkedQueue<TaskClient> myQueue = new ConcurrentLinkedQueue<>();
+    private Runnable handler;                   //
+    private ChannelHandlerContext context;      //
 
-    public ClientHandler(MainControl mControl) {
+    public ClientHandler(MainControl mControl, ExecutorService threadPull) {
         this.mControl = mControl;
+        this.threadPull = threadPull;
     }
 
 
@@ -53,32 +54,28 @@ public class ClientHandler extends SimpleChannelInboundHandler<Message> {
                     System.out.println("[DEBUG] userFiles command");
                     System.out.println("[DEBUG] " + ans.getMessage());
                     if (ans.getMessage() != null) {
-                        String[] fil=ans.getMessage().split(",");
+                        String[] fil = ans.getMessage().split(",");
                         File tmp;
                         for (String s : fil) {
-                            tmp=new File(s);
-                            myQueue.add(new TaskClient(tmp,TypeTask.info));
+                            tmp = new File(s);
+                            myQueue.add(new TaskClient(tmp, TypeTask.info));
+                            threadPull.submit(handler);
                         }
-                        if(!t.isAlive()){
-                            this.t.start();
-                        }
+
                     }
                     break;
                 case getLastMod: // запрос даты последней модификации
                     System.out.println("[DEBUG] getLastMod command");
-                    long sTime=Long.parseLong(ans.getMessage());
+                    long sTime = Long.parseLong(ans.getMessage());
                     File file = new File(ans.getCommandValue());
-                    if (file.lastModified()<sTime){
-                        Command cMsg=new Command(CommandType.upload,file.getPath());
+                    if (file.lastModified() < sTime) {
+                        Command cMsg = new Command(CommandType.upload, file.getPath());
                         ctx.writeAndFlush(cMsg);
-                    }else if (file.lastModified()>sTime && sTime!=-1l){
+                    } else if (file.lastModified() > sTime && sTime != 0L) {
                         System.out.println("[DEBUG] upload Task add");
-                        myQueue.add(new TaskClient(file,TypeTask.upload));
-                        if(!t.isAlive()){
-                            this.t.start();
-                        }
-
-                    }else if(sTime==-1l){
+                        myQueue.add(new TaskClient(file, TypeTask.upload));
+                        threadPull.submit(handler);
+                    } else if (sTime == 0L) {
                         file.deleteOnExit(); // удаляем т.к. нет на сервере
                     }
 
@@ -108,12 +105,12 @@ public class ClientHandler extends SimpleChannelInboundHandler<Message> {
                     " part:" + dMsg.getTpart() +
                     " / " + dMsg.getAllPart());
             File outFile = new File(dMsg.getPathFile());
-            if (dMsg.getTpart()==1){
+            if (dMsg.getTpart() == 1) {
                 try (FileOutputStream outF = new FileOutputStream(outFile, false)) {
                     outF.write(dMsg.getData());
                     outF.flush();
                 }
-            }else{
+            } else {
                 try (FileOutputStream outF = new FileOutputStream(outFile, true)) {
                     outF.write(dMsg.getData());
                     outF.flush();
@@ -127,8 +124,9 @@ public class ClientHandler extends SimpleChannelInboundHandler<Message> {
     }
 
     @Override
-    public void channelActive(ChannelHandlerContext ctx) throws Exception {
-        t=new Thread(()->{
+    public void channelActive(ChannelHandlerContext ctx) {
+        this.context = ctx;
+        this.handler = () -> {
             byte[] buf = new byte[1024 * 1024];
             DataSet tmp;
             int size;
@@ -138,49 +136,51 @@ public class ClientHandler extends SimpleChannelInboundHandler<Message> {
             int allPart;
             int tPart;
             System.out.println("[DEBUG] start task handler");
-            while (!myQueue.isEmpty()){
-                TaskClient task=myQueue.poll();
-                if (task.getType()==TypeTask.info){
-                    if(task.getWorkFile().exists()){
-                        Command cMsg=new Command(CommandType.getLastMod,task.getWorkFile().getPath());
-                        ctx.writeAndFlush(cMsg);
+            while (!myQueue.isEmpty()) {
+                TaskClient task = myQueue.poll();
+                if (task.getType() == TypeTask.info) {
+                    if (task.getWorkFile().exists()) {
+                        Command cMsg = new Command(CommandType.getLastMod, task.getWorkFile().getPath());
+                        context.writeAndFlush(cMsg);
                         System.out.println("[DEBUG] command getLastMod");
-                    }else{
-                        Command cMsg=new Command(CommandType.upload,task.getWorkFile().getPath());
-                        ctx.writeAndFlush(cMsg);
+                    } else {
+                        Command cMsg = new Command(CommandType.upload, task.getWorkFile().getPath());
+                        context.writeAndFlush(cMsg);
                         System.out.println("[DEBUG] command upload");
                     }
-                }else{
-                    System.out.println("[DEBUG] dataset file:"+task.getWorkFile().getName());
+                } else {
+                    System.out.println("[DEBUG] dataset file:" + task.getWorkFile().getName());
                     tPart = 0;
                     allPart = (int) (task.getWorkFile().length() / (1024 * 1024)) + (task.getWorkFile().length() % (1024 * 1024) != 0 ? 1 : 0);
                     fullName = task.getWorkFile().getPath();
                     fileName = task.getWorkFile().getName();
                     lastMod = task.getWorkFile().lastModified();
-                    System.out.println("[DEBUG] отправляем файл: " + fileName);
+                    System.out.println("[DEBUG] start upload file: " + fileName);
                     try (FileInputStream inF = new FileInputStream(task.getWorkFile())) {
                         while (inF.available() != 0) {
                             size = inF.read(buf);
                             tmp = new DataSet(fullName, fileName, lastMod, allPart, ++tPart, size, buf);
-                            ctx.writeAndFlush(tmp).sync();
+                            context.writeAndFlush(tmp).sync();
                         }
-                        System.out.println("[DEBUG]  отправлен файл: " + fileName);
+                        System.out.println("[DEBUG]  finish upload file: " + fileName);
                     } catch (FileNotFoundException e) {
+                        e.printStackTrace();
+                    } catch (InterruptedException e) {
                         e.printStackTrace();
                     } catch (IOException ioException) {
                         ioException.printStackTrace();
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
                     }
                 }
             }
             System.out.println("[DEBUG] stop task handler");
-        });
+        };
 
     }
 
     @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
         ctx.close();
     }
+
+
 }
