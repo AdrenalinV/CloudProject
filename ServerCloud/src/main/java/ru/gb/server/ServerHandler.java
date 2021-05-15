@@ -1,20 +1,18 @@
 package ru.gb.server;
 
 import io.netty.channel.*;
-import lombok.extern.log4j.Log4j2;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+
+
 import ru.gb.core.*;
 
 import java.io.*;
 import java.util.ArrayList;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
-@Log4j2
+
 
 public class ServerHandler extends SimpleChannelInboundHandler<Message> {
-    public static final Logger slog = LogManager.getLogger("Secure");
-    private static final String OUT_DIR = "C:\\Cloud\\";
+    private static final String OUT_DIR = "Cloud\\";
     private final ExecutorService threadPull;
     private final ConcurrentLinkedQueue<ItemTask> qTask = new ConcurrentLinkedQueue<>();
     private final BaseAuthService bas = BaseAuthService.of();
@@ -29,11 +27,17 @@ public class ServerHandler extends SimpleChannelInboundHandler<Message> {
 
     public ServerHandler(ExecutorService threadPull) {
         this.threadPull = threadPull;
+        File outDir=new File(OUT_DIR);
+        if (!outDir.exists()){
+            outDir.mkdir();
+            System.out.println("[DEBUG] create out dir");
+        }
     }
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-        log.debug("error channel");
+        System.out.println("error channel");
+        cause.printStackTrace();
         ctx.close();
     }
 
@@ -50,7 +54,7 @@ public class ServerHandler extends SimpleChannelInboundHandler<Message> {
             String fullName;
             String fileName;
             DataSet tmp;
-            log.debug("start task handler");
+            System.out.println("start task handler");
             while (!qTask.isEmpty()) {
                 ItemTask t = qTask.poll();
                 File fin = new File(OUT_DIR + userID + "\\" + t.getFileID());
@@ -59,14 +63,14 @@ public class ServerHandler extends SimpleChannelInboundHandler<Message> {
                 fullName = bds.getFullName(t.getFileID());
                 fileName = bds.getFileName(t.getFileID());
                 lastMod = Long.parseLong(bds.getLastMod(t.getFileID()));
-                log.debug("start send client file: " + fileName);
+                System.out.println("start send client file: " + fileName);
                 try (FileInputStream inF = new FileInputStream(fin)) {
                     while (inF.available() != 0) {
                         size = inF.read(buf);
                         tmp = new DataSet(fullName, fileName, lastMod, allPart, ++tPart, size, buf);
                         t.getCh().writeAndFlush(tmp).sync();
                     }
-                    log.debug("start send client file: " + fileName);
+                    System.out.println("start send client file: " + fileName);
                 } catch (FileNotFoundException e) {
                     e.printStackTrace();
                 } catch (InterruptedException e) {
@@ -75,7 +79,7 @@ public class ServerHandler extends SimpleChannelInboundHandler<Message> {
                     ioException.printStackTrace();
                 }
             }
-            log.debug("stop task handler");
+            System.out.println("stop task handler");
         });
 
     }
@@ -97,10 +101,10 @@ public class ServerHandler extends SimpleChannelInboundHandler<Message> {
             });
             if (this.userID != null) {
                 cond = Condition.okAuth;
-                slog.debug("authentication completed User: {}",aMsg.getUser());
+                System.out.println("authentication completed User: "+aMsg.getUser());
             } else {
                 cond = Condition.notAuth;
-                slog.warn("authentication error User: {} Password: {}",aMsg.getUser(),aMsg.getPass());
+                System.out.println("authentication error User: "+aMsg.getUser()+" Password: "+aMsg.getPass());
             }
         }
         // Добавляем пользователя
@@ -133,13 +137,20 @@ public class ServerHandler extends SimpleChannelInboundHandler<Message> {
         if (msg instanceof DataSet) {
             if (cond == Condition.okAuth) {
                 DataSet dMsg = (DataSet) msg;
-                log.debug("received dataSet " + dMsg.getNameFile());
+                System.out.println("received dataSet " + dMsg.getNameFile());
                 String fileID = bds.getUserFile(userID, dMsg.getPathFile()); // получаем файл ID
+                // загружаем файл и он есть в БД
                 if (dMsg.getTpart() == 1 && fileID != null) {
                     bds.setLastMod(dMsg.getDateMod(), fileID);
+                    // загружаем файл но его нет в бд
                 } else if (dMsg.getTpart() == 1 && fileID == null) {
                     bds.uploadFile(userID, dMsg);
                     fileID = bds.getUserFile(userID, dMsg.getPathFile());
+                    // проверяем есть ли каталог загрузки
+                    File tmp=new File(OUT_DIR + userID);
+                    if (!tmp.exists()){
+                        tmp.mkdirs();
+                    }
                 }
                 try (FileOutputStream outF = new FileOutputStream(OUT_DIR + userID + "\\" + fileID, true)) {
                     outF.write(dMsg.getData());
@@ -150,12 +161,12 @@ public class ServerHandler extends SimpleChannelInboundHandler<Message> {
         // пришла команда
         if (msg instanceof Command) {
             Command cMsg = (Command) msg;
-            log.debug("received command : " + cMsg.getCommandName() + " Значение : " + cMsg.getValue());
+            System.out.println(("received command : " + cMsg.getCommandName() + " Значение : " + cMsg.getValue()));
             switch (cMsg.getCommandName()) {
                 case crUser:  // создать пользователя
                     if (cond == Condition.notAuth) {
                         cond = Condition.newUser;
-                        log.debug("handler crUser");
+                        System.out.println("handler crUser");
                     }
                     break;
                 case upload: // отправить файл клиенту
@@ -166,7 +177,7 @@ public class ServerHandler extends SimpleChannelInboundHandler<Message> {
                             threadPull.submit(handlerQueue);
                             Answer ans = new Answer(true, "task add in queue", CommandType.upload);
                             ctx.writeAndFlush(ans);
-                            log.debug("handler upload");
+                            System.out.println("handler upload");
                         }
                     }
                     break;
@@ -184,7 +195,7 @@ public class ServerHandler extends SimpleChannelInboundHandler<Message> {
                         }
                         answer.setSuccess(true);
                         ctx.writeAndFlush(answer);
-                        log.debug("handler getList");
+                        System.out.println("handler getList");
                     }
                     break;
                 case setList: // список файлов на клиенте
@@ -194,7 +205,7 @@ public class ServerHandler extends SimpleChannelInboundHandler<Message> {
                         bds.setUserPath(cMsg.getValue(), userID);
                         answer.setSuccess(true);
                         ctx.writeAndFlush(answer);
-                        log.debug("handler setList");
+                        System.out.println("handler setList");
                     }
                     break;
                 case userFiles:
@@ -211,7 +222,7 @@ public class ServerHandler extends SimpleChannelInboundHandler<Message> {
                         }
                         answer.setSuccess(true);
                         ctx.writeAndFlush(answer);
-                        log.debug("handler userFiles");
+                        System.out.println("handler userFiles");
                     }
                     break;
                 case getLastMod: // запрос последней модификации файла
@@ -226,25 +237,25 @@ public class ServerHandler extends SimpleChannelInboundHandler<Message> {
                         }
                         ans.setMessage(String.valueOf(result));
                         ctx.writeAndFlush(ans);
-                        log.debug("handler getLastMod");
+                        System.out.println("handler getLastMod");
                     }
                     break;
                 case clear: // удалить удаленные файла пользователя
                     if (cond == Condition.okAuth) {
                         //TODO server clear
-                        log.debug("handler clear");
+                        System.out.println("handler clear");
                     }
                     break;
                 case delete: // удалить файла пользователя
                     if (cond == Condition.okAuth) {
                         //TODO server delete.
-                        log.debug("handler delete");
+                        System.out.println("handler delete");
                     }
                     break;
                 case undelete: // востановить удаленный файла пользователя
                     if (cond == Condition.okAuth) {
                         //TODO server undelete
-                        log.debug("handler undelete");
+                        System.out.println("handler undelete");
                     }
                     break;
             }
