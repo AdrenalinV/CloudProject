@@ -25,10 +25,7 @@ public class Main extends Application {
         mainControl.getLogInItem().setGraphic(new ImageView("img/logIN.png"));
         mainControl.getWorkItem().setGraphic(new ImageView("img/data.png"));
         stage.setOnCloseRequest(request -> {
-            if (Network.isLive()) {
-                Network b = Network.getInstance(mainControl);
-                b.close();
-            }
+            mainControl.quit();
         });
     }
 
