@@ -20,8 +20,6 @@ import ru.gb.core.MyJsonDecoder;
 import ru.gb.core.MyJsonEncoder;
 
 import java.nio.charset.StandardCharsets;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 @Getter
 public class Network {
@@ -42,7 +40,6 @@ public class Network {
     private Network(MainControl mControl) {
         new Thread(() -> {
             EventLoopGroup bossGroup = new NioEventLoopGroup();
-            ExecutorService threadPull = Executors.newCachedThreadPool();
             try {
                 System.out.println("[DEBUG] RUN Connect");
                 Bootstrap b = new Bootstrap();
@@ -62,7 +59,7 @@ public class Network {
                                         new StringDecoder(StandardCharsets.UTF_8),
                                         new MyJsonEncoder(),
                                         new MyJsonDecoder(),
-                                        new ClientHandler(mControl, threadPull)
+                                        new ClientHandler(mControl)
                                 );
                             }
                         });
@@ -72,7 +69,6 @@ public class Network {
                 e.printStackTrace();
             } finally {
                 bossGroup.shutdownGracefully();
-                threadPull.shutdown();
             }
         }).start();
         try {

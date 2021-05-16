@@ -4,7 +4,7 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-<VBox prefHeight="413.0" prefWidth="537.0" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ru.gb.client.MainControl">
+<VBox prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ru.gb.client.MainControl">
     <children>
         <MenuBar>
             <menus>
@@ -99,39 +99,43 @@
                             <children>
                                 <VBox>
                                     <children>
-                                        <Label text="Local files">
-                                            <VBox.margin>
-                                                <Insets bottom="5.0" left="10.0" top="5.0" />
-                                            </VBox.margin>
-                                        </Label>
-                                        <ListView fx:id="localList" VBox.vgrow="ALWAYS">
-                                 <VBox.margin>
-                                    <Insets left="5.0" right="5.0" />
-                                 </VBox.margin>
-                              </ListView>
-                                        <HBox alignment="CENTER_RIGHT" VBox.vgrow="ALWAYS">
-                                            <children>
-                                                <Label prefHeight="17.0" prefWidth="92.0" text="Cloud files">
-                                                    <HBox.margin>
-                                                        <Insets left="10.0" right="150.0" top="20.0" />
-                                                    </HBox.margin>
-                                                </Label>
-                                                <CheckBox mnemonicParsing="false" prefHeight="17.0" prefWidth="142.0" text="viwe delete file" />
-                                                <Button mnemonicParsing="false" onAction="#setList" prefHeight="25.0" prefWidth="60.0" text="Ok">
+                              <HBox prefHeight="100.0" prefWidth="200.0">
+                                 <children>
+                                              <Label prefHeight="17.0" prefWidth="228.0" text="Папки и файлы синхронизации" HBox.hgrow="ALWAYS">
+                                       <HBox.margin>
+                                          <Insets left="5.0" top="5.0" />
+                                       </HBox.margin>
+                                              </Label>
+                                                <Button mnemonicParsing="false" onAction="#setList" prefHeight="25.0" prefWidth="94.0" text="Сохранить">
                                                     <HBox.margin>
                                                         <Insets left="10.0" right="10.0" />
                                                     </HBox.margin>
                                                 </Button>
+                                                <Button mnemonicParsing="false" onAction="#openDialog" prefWidth="60.0" text="+" />
                                                 <Button mnemonicParsing="false" onAction="#clearFile" prefWidth="60.0" text="-">
                                                     <HBox.margin>
                                                         <Insets left="10.0" right="10.0" />
                                                     </HBox.margin>
                                                 </Button>
-                                                <Button mnemonicParsing="false" onAction="#openDialog" prefWidth="60.0" text="+">
+                                 </children>
+                              </HBox>
+                                        <ListView fx:id="localList" VBox.vgrow="ALWAYS">
+                                 <VBox.margin>
+                                    <Insets left="5.0" right="5.0" />
+                                 </VBox.margin>
+                              </ListView>
+                                        <HBox VBox.vgrow="ALWAYS">
+                                            <children>
+                                                <Label prefHeight="17.0" prefWidth="146.0" text="Файлы на сервере" HBox.hgrow="ALWAYS">
                                                     <HBox.margin>
-                                                        <Insets left="10.0" right="10.0" />
+                                                        <Insets left="5.0" top="5.0" />
                                                     </HBox.margin>
-                                                </Button>
+                                                </Label>
+                                                <CheckBox mnemonicParsing="false" prefHeight="17.0" prefWidth="92.0" text="удаленные ">
+                                       <HBox.margin>
+                                          <Insets left="5.0" top="5.0" />
+                                       </HBox.margin></CheckBox>
+                                    <Button mnemonicParsing="false" prefHeight="25.0" prefWidth="94.0" text="Сохранить" />
                                             </children>
                                         </HBox>
                                         <ListView fx:id="serverList" VBox.vgrow="ALWAYS">
@@ -147,6 +151,6 @@
                 </Tab>
             </tabs>
         </TabPane>
-        <TextField fx:id="statText" editable="false" prefHeight="21.0" prefWidth="614.0" />
+        <TextField fx:id="statText" editable="false" prefHeight="35.0" prefWidth="550.0" />
     </children>
 </VBox>
