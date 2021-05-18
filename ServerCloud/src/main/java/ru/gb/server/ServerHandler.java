@@ -60,6 +60,7 @@ public class ServerHandler extends SimpleChannelInboundHandler<Message> {
                 File fin = new File(OUT_DIR + userID + "\\" + t.getFileID());
                 tPart = 0;
                 allPart = (int) (fin.length() / (1024 * 1024)) + (fin.length() % (1024 * 1024) != 0 ? 1 : 0);
+                System.out.println("[DEBUG] allPart: " + allPart + " size: " + fin.length());
                 fullName = bds.getFullName(t.getFileID());
                 fileName = bds.getFileName(t.getFileID());
                 lastMod = Long.parseLong(bds.getLastMod(t.getFileID()));
@@ -142,6 +143,7 @@ public class ServerHandler extends SimpleChannelInboundHandler<Message> {
                 // загружаем файл и он есть в БД
                 if (dMsg.getTpart() == 1 && fileID != null) {
                     bds.setLastMod(dMsg.getDateMod(), fileID);
+                    new File(OUT_DIR + userID + "\\" + fileID).delete();
                     // загружаем файл но его нет в бд
                 } else if (dMsg.getTpart() == 1 && fileID == null) {
                     bds.uploadFile(userID, dMsg);
@@ -152,6 +154,7 @@ public class ServerHandler extends SimpleChannelInboundHandler<Message> {
                         tmp.mkdirs();
                     }
                 }
+
                 try (FileOutputStream outF = new FileOutputStream(OUT_DIR + userID + "\\" + fileID, true)) {
                     outF.write(dMsg.getData());
                     outF.flush();
@@ -225,6 +228,23 @@ public class ServerHandler extends SimpleChannelInboundHandler<Message> {
                         System.out.println("handler userFiles");
                     }
                     break;
+                case userDelFiles:
+                    if (cond == Condition.okAuth) {
+                        Answer answer = new Answer();
+                        answer.setCommandName(CommandType.userDelFiles);
+                        ArrayList<String> userFiles = bds.getDelUserFiles(userID);
+                        for (String userFile : userFiles) {
+                            if (answer.getMessage() == null) {
+                                answer.setMessage(userFile);
+                            } else {
+                                answer.setMessage(answer.getMessage() + "," + userFile);
+                            }
+                        }
+                        answer.setSuccess(true);
+                        ctx.writeAndFlush(answer);
+                        System.out.println("handler userDelFiles");
+                    }
+                    break;
                 case getLastMod: // запрос последней модификации файла
                     if (cond == Condition.okAuth) {
                         long result = 0L;
@@ -248,13 +268,39 @@ public class ServerHandler extends SimpleChannelInboundHandler<Message> {
                     break;
                 case delete: // удалить файла пользователя
                     if (cond == Condition.okAuth) {
-                        //TODO server delete.
+                        bds.setDelDate(cMsg.getValue(),userID);
                         System.out.println("handler delete");
+                        Answer answer = new Answer();
+                        answer.setCommandName(CommandType.delete);
+                        ArrayList<String> userFiles = bds.getUserFiles(userID);
+                        for (String userFile : userFiles) {
+                            if (answer.getMessage() == null) {
+                                answer.setMessage(userFile);
+                            } else {
+                                answer.setMessage(answer.getMessage() + "," + userFile);
+                            }
+                        }
+                        answer.setSuccess(true);
+                        ctx.writeAndFlush(answer);
+                        System.out.println("handler userFiles");
                     }
                     break;
                 case undelete: // востановить удаленный файла пользователя
                     if (cond == Condition.okAuth) {
-                        //TODO server undelete
+                        bds.unSetDelDate(cMsg.getValue(),userID);
+                        System.out.println("handler undelete");
+                        Answer answer = new Answer();
+                        answer.setCommandName(CommandType.undelete);
+                        ArrayList<String> userFiles = bds.getDelUserFiles(userID);
+                        for (String userFile : userFiles) {
+                            if (answer.getMessage() == null) {
+                                answer.setMessage(userFile);
+                            } else {
+                                answer.setMessage(answer.getMessage() + "," + userFile);
+                            }
+                        }
+                        answer.setSuccess(true);
+                        ctx.writeAndFlush(answer);
                         System.out.println("handler undelete");
                     }
                     break;
