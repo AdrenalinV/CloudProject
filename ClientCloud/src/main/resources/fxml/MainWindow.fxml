@@ -10,20 +10,8 @@
             <menus>
                 <Menu mnemonicParsing="false" text="File">
                     <items>
-                        <MenuItem mnemonicParsing="false" text="Вход" />
-                        <MenuItem mnemonicParsing="false" text="Настройки" />
                         <SeparatorMenuItem />
                         <MenuItem mnemonicParsing="false" onAction="#quit" text="Выход" />
-                    </items>
-                </Menu>
-                <Menu mnemonicParsing="false" text="Edit">
-                    <items>
-                        <MenuItem mnemonicParsing="false" text="Delete" />
-                    </items>
-                </Menu>
-                <Menu mnemonicParsing="false" text="Help">
-                    <items>
-                        <MenuItem mnemonicParsing="false" text="About" />
                     </items>
                 </Menu>
             </menus>
@@ -136,7 +124,7 @@
                                           <Insets left="5.0" top="5.0" />
                                        </HBox.margin></CheckBox>
                                     <Button fx:id="fileFunc" mnemonicParsing="false" onAction="#funcFile" prefHeight="25.0" prefWidth="94.0" text="Удалить" />
-                                    <Button onAction="#getSync" mnemonicParsing="false" prefHeight="25.0" prefWidth="94.0" text="Синхр,">
+                                    <Button onAction="#getSync" mnemonicParsing="false" prefHeight="25.0" prefWidth="94.0" text="Синхр.">
                                        <HBox.margin>
                                           <Insets left="20.0" />
                                        </HBox.margin>

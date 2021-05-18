@@ -69,7 +69,7 @@ public class ServerCloud {
                     })
                     .option(ChannelOption.SO_BACKLOG, 128)
                     .childOption(ChannelOption.SO_KEEPALIVE, true);
-            log.info("Start server");
+            log.info("Start server on port: {}",port);
             ChannelFuture f = b.bind(port).sync();
             f.channel().closeFuture().sync();
 
