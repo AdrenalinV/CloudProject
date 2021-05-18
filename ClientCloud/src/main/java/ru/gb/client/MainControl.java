@@ -22,25 +22,28 @@ import java.util.concurrent.Executors;
 @Getter
 public class MainControl {
     private static final ExecutorService threadPull = Executors.newCachedThreadPool();
-
+    private final Runnable handler;
+    private final ConcurrentLinkedQueue<TaskClient> myQueue = new ConcurrentLinkedQueue<>();
+    public Button fileFunc;
     private Network con;
     public ListView<String> localList;
-    public ListView<String> serverList;
+    public ListView<String> fileList;
     public Tab logInItem;
     public Tab workItem;
     public TabPane panel;
     public TextField statText;
     public TextField user;
     public TextField pass;
+    public CheckBox viewDel;
     public CheckBox checkSetUp;
     public TextField host;
     public TextField port;
     public Button oK;
     public Button Exit;
-    private final Runnable handler;
-    private final ConcurrentLinkedQueue<TaskClient> myQueue = new ConcurrentLinkedQueue<>();
+    private boolean sync;
 
-    public MainControl(){
+    public MainControl() {
+        sync=false;
         this.handler = () -> {
             byte[] buf = new byte[1024 * 1024];
             DataSet tmp;
@@ -53,6 +56,7 @@ public class MainControl {
             System.out.println("[DEBUG] start task handler");
             while (!myQueue.isEmpty()) {
                 TaskClient task = myQueue.poll();
+                System.out.println("[DEBUG] TypeTask: " + task.getType().name());
                 if (task.getType() == TypeTask.info) {
                     if (task.getWorkFile().exists()) {
                         Command cMsg = new Command(CommandType.getLastMod, task.getWorkFile().getPath());
@@ -63,7 +67,7 @@ public class MainControl {
                         task.getSocketChanel().writeAndFlush(cMsg);
                         System.out.println("[DEBUG] command upload");
                     }
-                } else {
+                } else if (task.getType() == TypeTask.upload){
                     System.out.println("[DEBUG] dataset file:" + task.getWorkFile().getName());
                     tPart = 0;
                     allPart = (int) (task.getWorkFile().length() / (1024 * 1024)) + (task.getWorkFile().length() % (1024 * 1024) != 0 ? 1 : 0);
@@ -71,6 +75,7 @@ public class MainControl {
                     fileName = task.getWorkFile().getName();
                     lastMod = task.getWorkFile().lastModified();
                     System.out.println("[DEBUG] start upload file: " + fileName);
+
                     try (FileInputStream inF = new FileInputStream(task.getWorkFile())) {
                         while (inF.available() != 0) {
                             size = inF.read(buf);
@@ -78,7 +83,7 @@ public class MainControl {
                             task.getSocketChanel().writeAndFlush(tmp).sync();
                         }
                         System.out.println("[DEBUG]  finish upload file: " + fileName);
-                        Command cMsg=new Command(CommandType.userFiles,"");
+                        Command cMsg = new Command(CommandType.userFiles, "");
                         task.getSocketChanel().writeAndFlush(cMsg).sync();
                     } catch (FileNotFoundException e) {
                         e.printStackTrace();
@@ -196,48 +201,108 @@ public class MainControl {
     }
 
     public void setLocalList(String[] fullName) {
-        localList.getItems().clear();
-        localList.getItems().addAll(fullName);
-
+        Platform.runLater(()->localList.getItems().clear());
+        if (fullName != null) {
+            Platform.runLater(()->localList.getItems().addAll(fullName));
+        }
     }
-    public void setServerList(String[] fullName){
-        serverList.getItems().clear();
-        serverList.getItems().addAll(fullName);
-        synchroCloud();
+
+    public void updateFileList(String[] fullName) {
+        Platform.runLater(()->fileList.getItems().clear());
+        if (fullName != null) {
+            Platform.runLater(()->fileList.getItems().addAll(fullName));
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            synchroCloud();
+        }
     }
 
     public void setStatus(String message) {
         if (message == null) {
-            statText.clear();
+            Platform.runLater(()->statText.clear());
         } else {
-            statText.setText(message);
+            Platform.runLater(()->statText.setText(message));
         }
     }
 
     public void synchroCloud() {
-        System.out.println("[DEBUD] start synchro Cloud");
-        ArrayList<File> localFiles = new ArrayList<>();        // список локальных файлов
-        ArrayList<File> serverFiles = new ArrayList<>();        // список локальных файлов
-        ObservableList<String> items = localList.getItems();
-        for (String item : items) {
-            localFiles.addAll(LocalFIle.getFiles(item));
+        if (!sync){
+            System.out.println("[DEBUD] start synchro Cloud");
+            ArrayList<File> localFiles = new ArrayList<>();        // список локальных файлов
+            ArrayList<File> serverFiles = new ArrayList<>();        // список локальных файлов
+            ObservableList<String> items = localList.getItems();
+            for (String item : items) {
+                localFiles.addAll(LocalFIle.getFiles(item));
+            }
+            items = fileList.getItems();
+            System.out.println("[DEBUG] file List: " + items.toString());
+            File tmp;
+
+            for (String item : items) {
+                serverFiles.add(tmp = new File(item));
+                System.out.println("[DEBUG] addTask info file: " + tmp.getPath());
+                addTask(tmp, TypeTask.info, con.getSocketChanel());
+                localFiles.remove(tmp);                      // удаляем файл который есть на сервере
+            }
+            for (File file : localFiles) {
+                System.out.println("[DEBUG] addTask  upload: " + file);
+                addTask(file, TypeTask.upload, con.getSocketChanel()); // задачи на загрузку файлов которых нет на сервере
+            }
+            threadPull.submit(handler);
+            sync=true;
+            System.out.println("[DEBUG] stop synchro Cloud");
         }
-        items = serverList.getItems();
-        File tmp;
-        for (String item : items) {
-            serverFiles.add(tmp=new File(item));
-            addTask(tmp, TypeTask.info,con.getSocketChanel());
-            localFiles.remove(tmp);                      // удаляем файл который есть на сервере
-        }
-        for (File file : localFiles) {
-            addTask(file, TypeTask.upload,con.getSocketChanel()); // задачи на загрузку файлов которых нет на сервере
-        }
+    }
+
+    public void addTask(File file, TypeTask type, SocketChannel socketChanel) {
+        myQueue.add(new TaskClient(file, type, socketChanel));
         threadPull.submit(handler);
     }
 
-    public void addTask(File file, TypeTask type, SocketChannel socketChanel){
-        myQueue.add(new TaskClient(file,type,socketChanel));
-        threadPull.submit(handler);
+
+    public void setUpdate() {
+        if (viewDel.isSelected()) {
+            Platform.runLater(()->fileFunc.setText("Восстановить"));
+            Command cMsg = new Command(CommandType.userDelFiles, "");
+            con.getSocketChanel().writeAndFlush(cMsg);
+        } else {
+            Platform.runLater(()->fileFunc.setText("Удалить"));
+            Command cMsg = new Command(CommandType.userFiles, "");
+            con.getSocketChanel().writeAndFlush(cMsg);
+        }
+
+    }
+
+    public void funcFile() {
+        final ObservableList<String> selectedItems = fileList.getSelectionModel().getSelectedItems();
+        if (selectedItems != null) {
+            if (viewDel.isSelected()) {
+                for (String selectedItem : selectedItems) {
+                    File f=new File(selectedItem);
+                    if (localList.getItems().indexOf(f.getParent().toString())==-1){
+                        Platform.runLater(()->localList.getItems().add(selectedItem));
+                        setList();
+                    }
+                    Command cMsg = new Command(CommandType.undelete, selectedItem);
+                    con.getSocketChanel().writeAndFlush(cMsg);
+                }
+            } else {
+                for (String selectedItem : selectedItems) {
+                    new File(selectedItem).delete();
+                    Platform.runLater(()->localList.getItems().remove(selectedItem));
+                    setList();
+                    Command cMsg = new Command(CommandType.delete, selectedItem);
+                    con.getSocketChanel().writeAndFlush(cMsg);
+                }
+            }
+        }
+    }
+
+    public void setSync(boolean sync) {
+        this.sync = sync;
     }
 
 

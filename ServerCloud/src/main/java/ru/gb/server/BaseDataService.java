@@ -4,14 +4,18 @@ import ru.gb.core.DataSet;
 
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.Date;
 
 public class BaseDataService implements DataService {
     private static BaseDataService bds = null;
-    private static final String USER_FILES = "SELECT full_name FROM CLOUD.data WHERE id_user=?";
+    private static final String USER_FILES = "SELECT full_name FROM CLOUD.data WHERE date_del IS NULL AND id_user=? ";
+    private static final String USER_DEL_FILES = "SELECT full_name FROM CLOUD.data WHERE date_del IS NOT NULL AND id_user=? ";
     private static final String USER_FILE = "SELECT id FROM CLOUD.data WHERE id_user=? AND full_name=?";
     private static final String ADD_FILE = "INSERT INTO CLOUD.data(id_user, full_name ,name ,date_last_mod) VALUES (?, ?, ?, ?)";
     private static final String GET_DATE_MOD = "SELECT date_last_mod FROM CLOUD.data WHERE id_user=? AND full_name=?";
     private static final String SET_DATE_MOD = "UPDATE CLOUD.data SET date_last_mod=? WHERE id=?";
+    private static final String UNSET_DATE_DEL = "UPDATE CLOUD.data SET date_del = NULL WHERE id_user=? AND full_name=?";
+    private static final String SET_DATE_DEL = "UPDATE CLOUD.data SET date_del=? WHERE id_user=? AND full_name=?";
     private static final String DEL_FILE = "DELETE FROM CLOUD.data WHERE id_user=? AND full_name=?";
     private static final String GET_FULL_NAME = "SELECT full_name FROM CLOUD.data WHERE id=?";
     private static final String GET_FILE_NAME = "SELECT name FROM CLOUD.data WHERE id=?";
@@ -35,6 +39,22 @@ public class BaseDataService implements DataService {
         ArrayList<String> files = new ArrayList<>();
         try (Connection connection = DataSource.getConnection();
              PreparedStatement ps = connection.prepareStatement(USER_FILES)) {
+            ps.setString(1, userID);
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                files.add(rs.getString(1));
+            }
+            rs.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return files;
+    }
+    @Override
+    public ArrayList<String> getDelUserFiles(String userID) {
+        ArrayList<String> files = new ArrayList<>();
+        try (Connection connection = DataSource.getConnection();
+             PreparedStatement ps = connection.prepareStatement(USER_DEL_FILES)) {
             ps.setString(1, userID);
             ResultSet rs = ps.executeQuery();
             while (rs.next()) {
@@ -108,6 +128,7 @@ public class BaseDataService implements DataService {
             e.printStackTrace();
         }
     }
+
 
     @Override
     public String getFullName(String fileID) {
@@ -210,6 +231,33 @@ public class BaseDataService implements DataService {
 
     }
 
+    @Override
+    public void setDelDate(String fullName, String userID) {
+        try (Connection connection = DataSource.getConnection();
+             PreparedStatement ps = connection.prepareStatement(SET_DATE_DEL)) {
+            Date date =new Date();
+            ps.setString(1, String.valueOf(date.getTime()) );
+            ps.setString(2, userID);
+            ps.setString(3, fullName);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+    }
+    @Override
+    public void unSetDelDate(String fullName, String userID) {
+        try (Connection connection = DataSource.getConnection();
+             PreparedStatement ps = connection.prepareStatement(UNSET_DATE_DEL)) {
+            Date date =new Date();
+            ps.setString(1, userID);
+            ps.setString(2, fullName);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+    }
 
 
 }

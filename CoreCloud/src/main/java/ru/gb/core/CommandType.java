@@ -4,6 +4,7 @@ public enum CommandType {
     none,
     getList,
     userFiles,
+    userDelFiles,
     getLastMod,
     clear,
     delete,

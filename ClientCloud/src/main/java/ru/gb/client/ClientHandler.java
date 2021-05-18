@@ -45,12 +45,28 @@ public class ClientHandler extends SimpleChannelInboundHandler<Message> {
                         mControl.setLocalList(ans.getMessage().split(","));
                     }
                     break;
+                case delete:
                 case userFiles:
-                    System.out.println("[DEBUG] userFiles command");
+                    mControl.setSync(false);
+                    System.out.println("[DEBUG] userFiles or delete command");
                     System.out.println("[DEBUG] " + ans.getMessage());
                     if (ans.getMessage() != null) {
                         String[] fil = ans.getMessage().split(",");
-                        mControl.setServerList(fil);
+                        mControl.updateFileList(fil);
+                    }else {
+                        mControl.updateFileList(null);
+                    }
+                    break;
+                case undelete:
+                case userDelFiles:
+                    System.out.println("[DEBUG] userDelFiles or undelete command");
+                    System.out.println("[DEBUG] " + ans.getMessage());
+                    mControl.setSync(true);
+                    if (ans.getMessage()!=null){
+                        String[] fil = ans.getMessage().split(",");
+                        mControl.updateFileList(fil);
+                    }else{
+                        mControl.updateFileList(null);
                     }
                     break;
                 case getLastMod: // запрос даты последней модификации
@@ -58,13 +74,14 @@ public class ClientHandler extends SimpleChannelInboundHandler<Message> {
                     long sTime = Long.parseLong(ans.getMessage());
                     File file = new File(ans.getCommandValue());
                     if (file.lastModified() < sTime) {
+                        System.out.println("[DEBUG] command upload file: " + file.getPath());
                         Command cMsg = new Command(CommandType.upload, file.getPath());
                         ctx.writeAndFlush(cMsg);
                     } else if (file.lastModified() > sTime && sTime != 0L) {
-                        System.out.println("[DEBUG] upload Task add");
+                        System.out.println("[DEBUG] add task upload file: " + file.getPath());
                         mControl.addTask(file, TypeTask.upload, mControl.getCon().getSocketChanel());
-
                     } else if (sTime == 0L) {
+                        System.out.println("[DEBUG] delete file: " + file.getPath());
                         file.deleteOnExit(); // удаляем т.к. нет на сервере
                     }
 
@@ -72,12 +89,6 @@ public class ClientHandler extends SimpleChannelInboundHandler<Message> {
                     break;
                 case clear:
                     //TODO client clear
-                    break;
-                case delete:
-                    //TODO client delete
-                    break;
-                case undelete:
-                    //TODO client undelete
                     break;
                 default:
                     if (ans.isSuccess()) {
