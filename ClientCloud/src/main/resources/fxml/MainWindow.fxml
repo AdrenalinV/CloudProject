@@ -75,12 +75,12 @@
                                         </VBox>
                                         <HBox alignment="CENTER" prefHeight="42.0" prefWidth="572.0">
                                             <children>
-                                                <Button fx:id="oK" mnemonicParsing="false" onAction="#Auten" prefHeight="25.0" prefWidth="50.0" text="Ok">
+                                                <Button fx:id="oK" mnemonicParsing="false" onAction="#Auten" prefHeight="25.0" prefWidth="80.0" text="Ok">
                                                     <HBox.margin>
                                                         <Insets right="10.0" />
                                                     </HBox.margin>
                                                 </Button>
-                                                <Button mnemonicParsing="false" onAction="#addUser" prefHeight="25.0" prefWidth="50.0" text="addUser">
+                                                <Button mnemonicParsing="false" onAction="#addUser" prefHeight="25.0" prefWidth="80.0" text="addUser">
                                                     <HBox.margin>
                                                         <Insets left="10.0" />
                                                     </HBox.margin>
@@ -136,9 +136,14 @@
                                           <Insets left="5.0" top="5.0" />
                                        </HBox.margin></CheckBox>
                                     <Button fx:id="fileFunc" mnemonicParsing="false" onAction="#funcFile" prefHeight="25.0" prefWidth="94.0" text="Удалить" />
+                                    <Button onAction="#getSync" mnemonicParsing="false" prefHeight="25.0" prefWidth="94.0" text="Синхр,">
+                                       <HBox.margin>
+                                          <Insets left="20.0" />
+                                       </HBox.margin>
+                                    </Button>
                                             </children>
                                         </HBox>
-                                        <ListView fx:id="fileList"  VBox.vgrow="ALWAYS">
+                                        <ListView fx:id="fileList" VBox.vgrow="ALWAYS">
                                  <VBox.margin>
                                     <Insets left="5.0" right="5.0" />
                                  </VBox.margin>

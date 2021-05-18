@@ -3,10 +3,11 @@ package ru.gb.client;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 
+import lombok.extern.log4j.Log4j2;
 import ru.gb.core.*;
 
 import java.io.*;
-
+@Log4j2
 public class ClientHandler extends SimpleChannelInboundHandler<Message> {
     private final MainControl mControl;
 
@@ -34,13 +35,13 @@ public class ClientHandler extends SimpleChannelInboundHandler<Message> {
         }
         if (msg instanceof Answer) {
             Answer ans = (Answer) msg;
-            System.out.println("[DEBUG] command: " + ans.getCommandName().toString() +
-                    "value: " + ans.getCommandValue() +
-                    "message: " + ans.getMessage());
+            log.debug("command: {} value: {} message: {}",
+                    ans.getCommandName().toString(),
+                    ans.getCommandValue(),
+                    ans.getMessage());
             switch (ans.getCommandName()) {
                 case getList:
-                    System.out.println("[DEBUG] getList command");
-                    System.out.println("[DEBUG] " + ans.getMessage());
+                    log.debug("getList command");;
                     if (ans.getMessage() != null) {
                         mControl.setLocalList(ans.getMessage().split(","));
                     }
@@ -48,8 +49,7 @@ public class ClientHandler extends SimpleChannelInboundHandler<Message> {
                 case delete:
                 case userFiles:
                     mControl.setSync(false);
-                    System.out.println("[DEBUG] userFiles or delete command");
-                    System.out.println("[DEBUG] " + ans.getMessage());
+                    log.debug("userFiles or delete command");
                     if (ans.getMessage() != null) {
                         String[] fil = ans.getMessage().split(",");
                         mControl.updateFileList(fil);
@@ -59,8 +59,7 @@ public class ClientHandler extends SimpleChannelInboundHandler<Message> {
                     break;
                 case undelete:
                 case userDelFiles:
-                    System.out.println("[DEBUG] userDelFiles or undelete command");
-                    System.out.println("[DEBUG] " + ans.getMessage());
+                    log.debug("userDelFiles or undelete command");
                     mControl.setSync(true);
                     if (ans.getMessage()!=null){
                         String[] fil = ans.getMessage().split(",");
@@ -70,18 +69,18 @@ public class ClientHandler extends SimpleChannelInboundHandler<Message> {
                     }
                     break;
                 case getLastMod: // запрос даты последней модификации
-                    System.out.println("[DEBUG] getLastMod command");
+                    log.debug("getLastMod command");
                     long sTime = Long.parseLong(ans.getMessage());
                     File file = new File(ans.getCommandValue());
                     if (file.lastModified() < sTime) {
-                        System.out.println("[DEBUG] command upload file: " + file.getPath());
+                        log.debug("command upload file: {}" , file.getPath());
                         Command cMsg = new Command(CommandType.upload, file.getPath());
                         ctx.writeAndFlush(cMsg);
                     } else if (file.lastModified() > sTime && sTime != 0L) {
-                        System.out.println("[DEBUG] add task upload file: " + file.getPath());
+                        log.debug("add task upload file: {}",file.getPath());
                         mControl.addTask(file, TypeTask.upload, mControl.getCon().getSocketChanel());
                     } else if (sTime == 0L) {
-                        System.out.println("[DEBUG] delete file: " + file.getPath());
+                        log.debug("delete file: {}",file.getPath());
                         file.deleteOnExit(); // удаляем т.к. нет на сервере
                     }
 
@@ -89,6 +88,7 @@ public class ClientHandler extends SimpleChannelInboundHandler<Message> {
                     break;
                 case clear:
                     //TODO client clear
+                    log.debug("getLastMod clear");
                     break;
                 default:
                     if (ans.isSuccess()) {
@@ -101,9 +101,10 @@ public class ClientHandler extends SimpleChannelInboundHandler<Message> {
         }
         if (msg instanceof DataSet) {
             DataSet dMsg = (DataSet) msg;
-            System.out.println("[DEBUG] " + dMsg.getNameFile() +
-                    " part:" + dMsg.getTpart() +
-                    " / " + dMsg.getAllPart());
+            log.debug("received dataset: {}  part: {}/{} ",
+                    dMsg.getNameFile() ,
+                    dMsg.getTpart() ,
+                    dMsg.getAllPart());
             File outFile = new File(dMsg.getPathFile());
             if (dMsg.getTpart() == 1) {
                 if (!outFile.getParentFile().exists()) {

@@ -15,12 +15,13 @@ import io.netty.handler.codec.string.StringEncoder;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
 import lombok.Getter;
+import lombok.extern.log4j.Log4j2;
 import ru.gb.core.AuthentcationRequest;
 import ru.gb.core.MyJsonDecoder;
 import ru.gb.core.MyJsonEncoder;
 
 import java.nio.charset.StandardCharsets;
-
+@Log4j2
 @Getter
 public class Network {
 
@@ -41,7 +42,7 @@ public class Network {
         new Thread(() -> {
             EventLoopGroup bossGroup = new NioEventLoopGroup();
             try {
-                System.out.println("[DEBUG] RUN Connect");
+                log.info("RUN Connect");
                 Bootstrap b = new Bootstrap();
                 b.group(bossGroup)
                         .channel(NioSocketChannel.class)
@@ -50,7 +51,7 @@ public class Network {
                             @Override
                             protected void initChannel(SocketChannel ch) {
                                 socketChanel = ch;
-                                System.out.println("[DEBUG] Exist connect");
+                                log.info("exist connect");
                                 socketChanel.pipeline().addLast(
                                         new LoggingHandler(LogLevel.DEBUG),
                                         new LengthFieldBasedFrameDecoder(2097152, 0, 4, 0, 4),
@@ -79,7 +80,7 @@ public class Network {
     }
 
     public void autent(String user, String passw) {
-        System.out.println("[DEBUG] send message atent");
+        log.debug("send message atent");
         AuthentcationRequest aMsg = new AuthentcationRequest();
         aMsg.setUser(user);
         aMsg.setPass(passw);
@@ -88,12 +89,7 @@ public class Network {
 
     public void close() {
         socketChanel.close();
-        System.out.println("[DEBUG] socket close");
+        log.info("socket close");
     }
-
-    public static boolean isLive() {
-        return item != null;
-    }
-
 
 }

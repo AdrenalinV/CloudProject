@@ -3,6 +3,9 @@ package ru.gb.server;
 import io.netty.channel.*;
 
 
+import lombok.extern.log4j.Log4j2;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import ru.gb.core.*;
 
 import java.io.*;
@@ -10,8 +13,9 @@ import java.util.ArrayList;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
 
-
+@Log4j2
 public class ServerHandler extends SimpleChannelInboundHandler<Message> {
+    private static final Logger slog = LogManager.getLogger("Secure");
     private static final String OUT_DIR = "Cloud\\";
     private final ExecutorService threadPull;
     private final ConcurrentLinkedQueue<ItemTask> qTask = new ConcurrentLinkedQueue<>();
@@ -25,18 +29,21 @@ public class ServerHandler extends SimpleChannelInboundHandler<Message> {
 
     enum Condition {notAuth, okAuth, newUser}
 
-    public ServerHandler(ExecutorService threadPull) {
+    public ServerHandler(ExecutorService threadPull) throws RuntimeException {
         this.threadPull = threadPull;
-        File outDir=new File(OUT_DIR);
-        if (!outDir.exists()){
-            outDir.mkdir();
-            System.out.println("[DEBUG] create out dir");
+        File outDir = new File(OUT_DIR);
+        if (!outDir.exists()) {
+            if (!outDir.mkdir()){
+                log.error("Error create out dir");
+                throw new RuntimeException("Error create out dir: "+OUT_DIR);
+            }
+            log.info("create out dir");
         }
     }
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-        System.out.println("error channel");
+        log.error("error channel");
         cause.printStackTrace();
         ctx.close();
     }
@@ -54,33 +61,29 @@ public class ServerHandler extends SimpleChannelInboundHandler<Message> {
             String fullName;
             String fileName;
             DataSet tmp;
-            System.out.println("start task handler");
+            log.debug("start task handler");
             while (!qTask.isEmpty()) {
                 ItemTask t = qTask.poll();
                 File fin = new File(OUT_DIR + userID + "\\" + t.getFileID());
                 tPart = 0;
                 allPart = (int) (fin.length() / (1024 * 1024)) + (fin.length() % (1024 * 1024) != 0 ? 1 : 0);
-                System.out.println("[DEBUG] allPart: " + allPart + " size: " + fin.length());
                 fullName = bds.getFullName(t.getFileID());
                 fileName = bds.getFileName(t.getFileID());
                 lastMod = Long.parseLong(bds.getLastMod(t.getFileID()));
-                System.out.println("start send client file: " + fileName);
+                log.debug("start send client file: " + fileName);
                 try (FileInputStream inF = new FileInputStream(fin)) {
                     while (inF.available() != 0) {
                         size = inF.read(buf);
                         tmp = new DataSet(fullName, fileName, lastMod, allPart, ++tPart, size, buf);
                         t.getCh().writeAndFlush(tmp).sync();
                     }
-                    System.out.println("start send client file: " + fileName);
-                } catch (FileNotFoundException e) {
+                } catch (Exception e) {
+                    log.error(" down task handler ");
                     e.printStackTrace();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                } catch (IOException ioException) {
-                    ioException.printStackTrace();
                 }
+                log.debug("stop send client file: " + fileName);
             }
-            System.out.println("stop task handler");
+            log.debug("stop task handler");
         });
 
     }
@@ -94,18 +97,15 @@ public class ServerHandler extends SimpleChannelInboundHandler<Message> {
             aMsg.setStat(this.userID != null);
             aMsg.setId(this.userID);
             ChannelFuture f = ch.writeAndFlush(aMsg);
-            f.addListener(new ChannelFutureListener() {
-                @Override
-                public void operationComplete(ChannelFuture future) {
-                    assert f == future;
-                }
+            f.addListener((ChannelFutureListener) future -> {
+                assert f == future;
             });
             if (this.userID != null) {
                 cond = Condition.okAuth;
-                System.out.println("authentication completed User: "+aMsg.getUser());
+                slog.info("authentication completed User: {}", aMsg.getUser());
             } else {
                 cond = Condition.notAuth;
-                System.out.println("authentication error User: "+aMsg.getUser()+" Password: "+aMsg.getPass());
+                slog.warn("authentication error User: {} Password: {}", aMsg.getUser(), aMsg.getPass());
             }
         }
         // Добавляем пользователя
@@ -125,11 +125,8 @@ public class ServerHandler extends SimpleChannelInboundHandler<Message> {
                 ans.setMessage("The user name and password must be filled in!");
             }
             ChannelFuture f = ch.writeAndFlush(ans);
-            f.addListener(new ChannelFutureListener() {
-                @Override
-                public void operationComplete(ChannelFuture future) {
-                    assert f == future;
-                }
+            f.addListener((ChannelFutureListener) future -> {
+                assert f == future;
             });
             cond = Condition.notAuth;
 
@@ -138,7 +135,7 @@ public class ServerHandler extends SimpleChannelInboundHandler<Message> {
         if (msg instanceof DataSet) {
             if (cond == Condition.okAuth) {
                 DataSet dMsg = (DataSet) msg;
-                System.out.println("received dataSet " + dMsg.getNameFile());
+
                 String fileID = bds.getUserFile(userID, dMsg.getPathFile()); // получаем файл ID
                 // загружаем файл и он есть в БД
                 if (dMsg.getTpart() == 1 && fileID != null) {
@@ -149,12 +146,12 @@ public class ServerHandler extends SimpleChannelInboundHandler<Message> {
                     bds.uploadFile(userID, dMsg);
                     fileID = bds.getUserFile(userID, dMsg.getPathFile());
                     // проверяем есть ли каталог загрузки
-                    File tmp=new File(OUT_DIR + userID);
-                    if (!tmp.exists()){
+                    File tmp = new File(OUT_DIR + userID);
+                    if (!tmp.exists()) {
                         tmp.mkdirs();
                     }
                 }
-
+                log.debug("received dataSet " + dMsg.getNameFile());
                 try (FileOutputStream outF = new FileOutputStream(OUT_DIR + userID + "\\" + fileID, true)) {
                     outF.write(dMsg.getData());
                     outF.flush();
@@ -164,12 +161,12 @@ public class ServerHandler extends SimpleChannelInboundHandler<Message> {
         // пришла команда
         if (msg instanceof Command) {
             Command cMsg = (Command) msg;
-            System.out.println(("received command : " + cMsg.getCommandName() + " Значение : " + cMsg.getValue()));
+            log.debug(("received command : " + cMsg.getCommandName() + " Значение : " + cMsg.getValue()));
             switch (cMsg.getCommandName()) {
                 case crUser:  // создать пользователя
                     if (cond == Condition.notAuth) {
                         cond = Condition.newUser;
-                        System.out.println("handler crUser");
+                        log.debug("handler crUser");
                     }
                     break;
                 case upload: // отправить файл клиенту
@@ -180,7 +177,7 @@ public class ServerHandler extends SimpleChannelInboundHandler<Message> {
                             threadPull.submit(handlerQueue);
                             Answer ans = new Answer(true, "task add in queue", CommandType.upload);
                             ctx.writeAndFlush(ans);
-                            System.out.println("handler upload");
+                            log.debug("handler upload");
                         }
                     }
                     break;
@@ -198,7 +195,7 @@ public class ServerHandler extends SimpleChannelInboundHandler<Message> {
                         }
                         answer.setSuccess(true);
                         ctx.writeAndFlush(answer);
-                        System.out.println("handler getList");
+                        log.debug("handler getList");
                     }
                     break;
                 case setList: // список файлов на клиенте
@@ -208,7 +205,7 @@ public class ServerHandler extends SimpleChannelInboundHandler<Message> {
                         bds.setUserPath(cMsg.getValue(), userID);
                         answer.setSuccess(true);
                         ctx.writeAndFlush(answer);
-                        System.out.println("handler setList");
+                        log.debug("handler setList");
                     }
                     break;
                 case userFiles:
@@ -225,7 +222,7 @@ public class ServerHandler extends SimpleChannelInboundHandler<Message> {
                         }
                         answer.setSuccess(true);
                         ctx.writeAndFlush(answer);
-                        System.out.println("handler userFiles");
+                        log.debug("handler userFiles");
                     }
                     break;
                 case userDelFiles:
@@ -242,7 +239,7 @@ public class ServerHandler extends SimpleChannelInboundHandler<Message> {
                         }
                         answer.setSuccess(true);
                         ctx.writeAndFlush(answer);
-                        System.out.println("handler userDelFiles");
+                        log.debug("handler userDelFiles");
                     }
                     break;
                 case getLastMod: // запрос последней модификации файла
@@ -257,19 +254,18 @@ public class ServerHandler extends SimpleChannelInboundHandler<Message> {
                         }
                         ans.setMessage(String.valueOf(result));
                         ctx.writeAndFlush(ans);
-                        System.out.println("handler getLastMod");
+                        log.debug("handler getLastMod");
                     }
                     break;
                 case clear: // удалить удаленные файла пользователя
                     if (cond == Condition.okAuth) {
                         //TODO server clear
-                        System.out.println("handler clear");
+                        log.debug("handler clear");
                     }
                     break;
                 case delete: // удалить файла пользователя
                     if (cond == Condition.okAuth) {
-                        bds.setDelDate(cMsg.getValue(),userID);
-                        System.out.println("handler delete");
+                        bds.setDelDate(cMsg.getValue(), userID);
                         Answer answer = new Answer();
                         answer.setCommandName(CommandType.delete);
                         ArrayList<String> userFiles = bds.getUserFiles(userID);
@@ -282,13 +278,12 @@ public class ServerHandler extends SimpleChannelInboundHandler<Message> {
                         }
                         answer.setSuccess(true);
                         ctx.writeAndFlush(answer);
-                        System.out.println("handler userFiles");
+                        log.debug("handler delete");
                     }
                     break;
                 case undelete: // востановить удаленный файла пользователя
                     if (cond == Condition.okAuth) {
-                        bds.unSetDelDate(cMsg.getValue(),userID);
-                        System.out.println("handler undelete");
+                        bds.unSetDelDate(cMsg.getValue(), userID);
                         Answer answer = new Answer();
                         answer.setCommandName(CommandType.undelete);
                         ArrayList<String> userFiles = bds.getDelUserFiles(userID);
@@ -301,7 +296,7 @@ public class ServerHandler extends SimpleChannelInboundHandler<Message> {
                         }
                         answer.setSuccess(true);
                         ctx.writeAndFlush(answer);
-                        System.out.println("handler undelete");
+                        log.debug("handler undelete");
                     }
                     break;
             }

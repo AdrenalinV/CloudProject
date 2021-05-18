@@ -1,14 +1,14 @@
 package ru.gb.server;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+
+import lombok.extern.log4j.Log4j2;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.sql.*;
 
+@Log4j2
 public class BaseAuthService implements AuthService {
-    public static final Logger log = LogManager.getLogger(BaseAuthService.class.getName());
     private static BaseAuthService bas = null;
     private static final String INIT_DB = "CREATE SCHEMA IF NOT EXISTS CLOUD;" +
             "CREATE TABLE IF NOT EXISTS CLOUD.user (id INTEGER PRIMARY KEY AUTO_INCREMENT NOT NULL," +
@@ -36,16 +36,15 @@ public class BaseAuthService implements AuthService {
              Statement st = con.createStatement()) {
             st.executeUpdate(INIT_DB);
         }
-
+        log.info("create BaseAuthService");
     }
 
     public static BaseAuthService of() {
         if (bas == null) {
             try {
-                log.debug("start authentication service");
                 bas = new BaseAuthService();
-            } catch (SQLException throwables) {
-                throwables.printStackTrace();
+            } catch (SQLException e) {
+                e.printStackTrace();
             }
         }
         return bas;

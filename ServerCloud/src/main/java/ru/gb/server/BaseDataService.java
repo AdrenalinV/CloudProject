@@ -1,11 +1,13 @@
 package ru.gb.server;
 
+import lombok.extern.log4j.Log4j2;
 import ru.gb.core.DataSet;
 
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.Date;
 
+@Log4j2
 public class BaseDataService implements DataService {
     private static BaseDataService bds = null;
     private static final String USER_FILES = "SELECT full_name FROM CLOUD.data WHERE date_del IS NULL AND id_user=? ";
@@ -25,6 +27,7 @@ public class BaseDataService implements DataService {
     private static final String SET_USER_PATH = "INSERT INTO CLOUD.user_path(id_user, full_name) VALUES(?,?)";
 
     private BaseDataService() {
+        log.info("create BaseDataService");
     }
 
     public static BaseDataService of() {
@@ -50,6 +53,7 @@ public class BaseDataService implements DataService {
         }
         return files;
     }
+
     @Override
     public ArrayList<String> getDelUserFiles(String userID) {
         ArrayList<String> files = new ArrayList<>();
@@ -235,8 +239,8 @@ public class BaseDataService implements DataService {
     public void setDelDate(String fullName, String userID) {
         try (Connection connection = DataSource.getConnection();
              PreparedStatement ps = connection.prepareStatement(SET_DATE_DEL)) {
-            Date date =new Date();
-            ps.setString(1, String.valueOf(date.getTime()) );
+            Date date = new Date();
+            ps.setString(1, String.valueOf(date.getTime()));
             ps.setString(2, userID);
             ps.setString(3, fullName);
             ps.executeUpdate();
@@ -245,11 +249,11 @@ public class BaseDataService implements DataService {
         }
 
     }
+
     @Override
     public void unSetDelDate(String fullName, String userID) {
         try (Connection connection = DataSource.getConnection();
              PreparedStatement ps = connection.prepareStatement(UNSET_DATE_DEL)) {
-            Date date =new Date();
             ps.setString(1, userID);
             ps.setString(2, fullName);
             ps.executeUpdate();
